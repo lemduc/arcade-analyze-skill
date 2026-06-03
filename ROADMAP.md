@@ -3,9 +3,9 @@
 This roadmap tracks what needs to be built to turn `arcade-analyze` into a daily
 tool for professional software architects — not just a proof-of-concept CLI.
 
-The skill currently covers **one use case well**: single-run analysis of a local
-codebase, opened as an interactive HTML report. That's useful but not the full
-scope of what an architect needs day-to-day.
+**Phase 1 is complete** (see below): the skill now covers single-run analysis,
+algorithm comparison, version drift, and architecture Q&A — plus remote git URLs.
+Phases 2–5 below are what's left to make it a full day-to-day architect tool.
 
 Each phase below adds a meaningful capability. Items are marked as:
 - `[arcade-agent]` — needs new or extended code in the tool library
@@ -21,10 +21,10 @@ Each phase below adds a meaningful capability. Items are marked as:
 | Single-run analysis: components, smells, metrics | ✅ done |
 | Interactive HTML report, auto-opened | ✅ done |
 | Python, Java, C/C++ languages | ✅ done |
-| Algorithm comparison (PKG vs WCA vs ACDC etc.) | `examples/compare_algorithms.py` exists — not in skill |
-| Architecture drift across git versions | `scripts/arch_diff.py` + `tools/compare.py` exist — not in skill |
-| Remote git URL analysis | `ingest()` supports URLs — not prominently surfaced |
-| Natural-language Q&A about the architecture | `query`, `summarize`, `explain_component` MCP tools — not in skill |
+| Algorithm comparison (PKG vs WCA vs ACDC etc.) | ✅ done (`scripts/compare_algorithms.py`) |
+| Architecture drift across git versions | ✅ done (`scripts/diff_versions.py`) |
+| Remote git URL analysis | ✅ done (all scripts accept a git URL as `<source>`) |
+| Natural-language Q&A about the architecture | ✅ done (`scripts/query.py`: summarize/explain/find/ask) |
 | C4 model export (Context / Container / Component) | ❌ not started |
 | Layer / pattern validation (hexagonal, clean arch) | ❌ not started |
 | Custom architectural rule checking | ❌ not started |
@@ -37,50 +37,55 @@ Each phase below adds a meaningful capability. Items are marked as:
 
 ---
 
-## Phase 1 — Unlock what already exists
+## Phase 1 — Unlock what already exists ✅ DONE
 
-**Theme:** three real architect workflows are hiding inside arcade-agent's tools
-and example scripts but aren't reachable from the skill. Surfacing them requires
+**Theme:** three real architect workflows were hiding inside arcade-agent's tools
+and example scripts but weren't reachable from the skill. Surfacing them required
 no new algorithms — just wiring up existing code.
 
-**Effort:** ~1–2 weeks.
+**Status:** shipped. Four scripts in `scripts/`: `analyze.py`,
+`compare_algorithms.py`, `diff_versions.py`, `query.py` (sharing `_common.py`).
+Verified end-to-end on arcade-agent (Python) and arcade_core (Java) — e.g. the
+v1.0.0→v1.2.0 diff reports A2A similarity 0.38 with 902 entity movements and a
+dependency cycle that migrated from `Extractors` to `Util`.
 
-### 1a. Algorithm comparison `[skill]`
-Expose `examples/compare_algorithms.py` as a skill sub-command (e.g.
-`/arcade-analyze compare-algorithms /path/to/repo --language java`). Shows
-PKG, WCA, ACDC, ARC side-by-side in a comparison HTML report.
+### 1a. Algorithm comparison `[skill]` ✅
+Shipped as `scripts/compare_algorithms.py` — runs PKG/WCA/ACDC (and ARC/LIMBO
+with `--use-llm`) and emits a side-by-side comparison HTML report plus a summary
+JSON of per-algorithm components/smells/RCI/TurboMQ.
 
 Useful when: choosing a recovery strategy for a new project; verifying that
 a "well-modularised" claim holds across multiple lenses.
 
-### 1b. Architecture drift across git versions `[skill]`
-Expose `compare(arch_a, arch_b)` + `scripts/arch_diff.py` as
-`/arcade-analyze diff /path/to/repo --from v1.2 --to v2.0`. Outputs:
+### 1b. Architecture drift across git versions `[skill]` ✅
+Shipped as `scripts/diff_versions.py` — temp-clones the repo (working tree
+untouched), checks out two refs, recovers each, runs `compare()`, and reports:
 - Component similarity score (A2A)
-- Added / removed / renamed components
+- Added / removed components
 - Entities that moved between components (refactored classes)
 - Delta on all six metrics
-- New smells introduced in the newer version
+- New vs. resolved smells between the versions
 
 Useful when: quantifying technical debt accrual; preparing architecture review
 slides; onboarding into "what changed since the rewrite?".
 
-### 1c. Natural-language Q&A mode `[skill]`
-Drive `query()`, `summarize()`, `explain_component()`, and `find_relevant()` from
-the skill so the architect can ask follow-up questions after a run:
+### 1c. Natural-language Q&A mode `[skill]` ✅
+Shipped as `scripts/query.py` (summarize / explain / find / ask sub-commands)
+driving `summarize()`, `explain_component()`, `find_relevant()`, and `query()`.
+The skill maps natural-language questions to a sub-command, e.g.:
 - "Which component has the highest fan-in?"
 - "Explain what the Clustering component does"
 - "What entities are relevant to authentication?"
 - "Which component should I look at first to understand how data flows in?"
 
-The MCP server is already running for this (`arcade-mcp`). The skill needs to
-maintain a session context (parse result session ID) so it can answer follow-ups
-without re-parsing on every question.
+Instead of a long-lived MCP session, the script relies on arcade-agent's
+mtime-based **parse cache** — repeated sub-commands against the same codebase
+skip re-parsing, so running several questions in a row is cheap and stateless.
 
-### 1d. Remote git URL analysis `[skill]`
-Surface `ingest()`'s git URL support prominently in the skill. Architects frequently
-analyse repos they don't have locally (vendor libraries, acquired codebases, open
-source dependencies). Add a `--repo` flag to the wrapper and document it.
+### 1d. Remote git URL analysis `[skill]` ✅
+All four scripts accept a git URL as `<source>` (arcade-agent's `ingest()` clones
+it), documented in the README and SKILL.md. Architects can analyze repos they
+don't have locally — vendor libraries, acquired codebases, dependencies.
 
 ---
 
@@ -250,8 +255,8 @@ codebases.
 
 | Phase | Items | Unlock |
 |-------|-------|--------|
-| **Now** (Phase 1) | 1a–1d | Surfaces existing arcade-agent tools; no new algorithms needed |
-| **Next** (Phase 2a–2b) | Stakeholder summary, DSM view | Makes output presentable beyond the team |
+| ✅ **Done** (Phase 1) | 1a–1d | Surfaced existing arcade-agent tools — comparison, drift, Q&A, remote repos |
+| **Now** (Phase 2a–2b) | Stakeholder summary, DSM view | Makes output presentable beyond the team |
 | **Next** (Phase 3a–3b) | Rules, layered detection | Moves from observe to validate |
 | **Then** (Phase 2c–2d) | C4 export, refactoring roadmap | Full architect deliverable set |
 | **Then** (Phase 3c) | Packaged CI drift gate | Operationalises findings |

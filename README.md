@@ -87,8 +87,8 @@ first.
    ln -s "$(pwd)/arcade-analyze-skill" ~/.claude/skills/arcade-analyze
    ```
 
-3. Tell the skill where arcade-agent lives (the wrapper checks `--arcade-home`,
-   then `$ARCADE_AGENT_HOME`, then a built-in default):
+3. Tell the skill where arcade-agent lives (the scripts check `--arcade-home`,
+   then `$ARCADE_AGENT_HOME`, and error out with guidance if neither is set):
 
    ```bash
    export ARCADE_AGENT_HOME=/path/to/arcade-agent
@@ -97,43 +97,72 @@ first.
 ## Usage
 
 In Claude Code, just ask in natural language — the skill triggers on requests
-like:
+like "analyze the architecture of `/path/to/repo`", "compare PKG vs WCA on this
+project", "what changed architecturally since v1.0?", or "explain the Clustering
+component". The skill picks the right workflow below.
 
-- "analyze the architecture of `/path/to/repo`"
-- "recover the architecture and show me the components"
-- "find architectural smells / dependency cycles in this project"
-- "is this codebase well-modularized?"
+Each workflow is a script run with arcade-agent's venv interpreter. `<source>`
+is a local directory **or a git URL** (cloned for you).
 
-Or run the wrapper directly with arcade-agent's venv interpreter:
+### 1. Analyze — one codebase → interactive HTML report
 
 ```bash
-"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/analyze.py /path/to/repo \
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/analyze.py <source> \
   --language java --algorithm pkg
 ```
 
-### Options
+Options: `--language/-l`, `--algorithm/-a` (`pkg` default, `wca`/`acdc`/`arc`/`limbo`),
+`--num-clusters/-n`, `--source-root` (e.g. `src/main/java`), `--use-llm`,
+`--also-mermaid`, `--output/-o`, `--no-open`, `--arcade-home`.
 
-| Flag | Purpose |
-|------|---------|
-| `--language / -l` | `java`, `python`, `c`, `cpp` (auto-detected if omitted) |
-| `--algorithm / -a` | `pkg` (default), `wca`, `acdc`, `arc`, `limbo` |
-| `--num-clusters / -n` | Target component count (wca/acdc/arc/limbo) |
-| `--use-llm` | Semantic concern + smell analysis via the `claude` CLI |
-| `--also-mermaid` | Also emit a Mermaid `.md` component diagram |
-| `--output / -o` | HTML output path (default `./arcade-report/<name>-<algo>.html`) |
-| `--no-open` | Don't auto-open the report |
-| `--arcade-home` | Path to the arcade-agent repo |
+### 2. Compare algorithms — side-by-side recovery report
+
+```bash
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/compare_algorithms.py <source> \
+  --algorithms pkg,wca,acdc -n 13
+```
+
+Pass `-n` (target cluster count) when including `wca` — it over-fragments
+without one. `arc`/`limbo` require `--use-llm`.
+
+### 3. Diff versions — architectural drift between two git refs
+
+```bash
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/diff_versions.py <local-git-repo> \
+  --from v1.0.0 --to v1.2.0 --language java
+```
+
+Clones to a temp dir (your working tree is untouched). Prints a markdown drift
+report — A2A similarity, metric deltas, added/removed components, entity
+movements, new vs. resolved smells. `--to` defaults to `HEAD`; `-o` saves the
+markdown.
+
+### 4. Query — answer questions about the architecture
+
+```bash
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/query.py summarize <source>
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/query.py explain <source> Clustering
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/query.py find <source> "authentication"
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/query.py ask <source> most_coupled
+```
 
 See [`references/algorithms.md`](references/algorithms.md) for algorithm, smell,
-and metric details.
+and metric details, and [`ROADMAP.md`](ROADMAP.md) for what's planned next.
 
 ## Layout
 
 ```
 arcade-analyze-skill/
-├── SKILL.md                  # skill definition (trigger + workflow)
-├── scripts/analyze.py        # one-command pipeline wrapper
-└── references/algorithms.md  # algorithm / smell / metric reference
+├── SKILL.md                      # skill definition + how to drive each workflow
+├── scripts/
+│   ├── _common.py                # shared: home resolution, ingest+parse, summary
+│   ├── analyze.py                # 1. single-run pipeline → HTML report
+│   ├── compare_algorithms.py     # 2. side-by-side algorithm comparison
+│   ├── diff_versions.py          # 3. architectural drift across git refs
+│   └── query.py                  # 4. Q&A: summarize / explain / find / ask
+├── examples/                     # committed demo reports + run_demo.sh
+├── references/algorithms.md      # algorithm / smell / metric reference
+└── ROADMAP.md                    # roadmap toward a full architect tool
 ```
 
 ## License
