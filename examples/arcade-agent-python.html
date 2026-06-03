@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arcade-agent: arcade_agent (local)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #1a1a2e; background: #f8f9fa;
+            max-width: 1200px; margin: 0 auto; padding: 2rem; padding-top: 4rem;
+        }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: #1e293b; padding: 0.6rem 2rem;
+            display: flex; align-items: center; gap: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        nav .nav-title {
+            font-weight: 700; color: #f8fafc; font-size: 0.85rem;
+            white-space: nowrap; margin-right: 0.5rem;
+        }
+        nav a {
+            color: #94a3b8; text-decoration: none; font-size: 0.8rem;
+            padding: 0.3rem 0.7rem; border-radius: 4px; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        nav a:hover { color: #f8fafc; background: #334155; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        h2 { font-size: 1.3rem; margin: 2rem 0 1rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.5rem; scroll-margin-top: 3.5rem; }
+        h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
+        .subtitle { color: #666; margin-bottom: 2rem; }
+        .stats {
+            display: flex; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap;
+        }
+        .stat-card {
+            background: white; border-radius: 8px; padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-width: 140px;
+        }
+        .stat-card .number { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
+        .stat-card .label { font-size: 0.85rem; color: #666; }
+        .card {
+            background: white; border-radius: 8px; padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;
+        }
+        .mermaid { text-align: center; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f1f5f9; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+        td { font-size: 0.9rem; }
+        .entity-list { font-family: monospace; font-size: 0.8rem; color: #555; max-width: 500px; }
+        .smell {
+            border-left: 4px solid #ccc; padding: 1rem 1.5rem; margin-bottom: 1rem;
+            background: white; border-radius: 0 8px 8px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .smell.high { border-left-color: #ef4444; }
+        .smell.medium { border-left-color: #f59e0b; }
+        .smell.low { border-left-color: #3b82f6; }
+        .smell-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .badge {
+            font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem;
+            border-radius: 99px; text-transform: uppercase;
+        }
+        .badge.high { background: #fef2f2; color: #dc2626; }
+        .badge.medium { background: #fffbeb; color: #d97706; }
+        .badge.low { background: #eff6ff; color: #2563eb; }
+        .smell-detail { margin: 0.5rem 0; font-size: 0.9rem; }
+        .smell-detail strong { display: inline-block; width: 100px; color: #555; }
+        .rationale { background: #f8fafc; padding: 1rem; border-radius: 6px; font-style: italic; color: #555; }
+        .metric-card {
+            display: inline-block; background: white; border-radius: 8px; padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0.5rem; min-width: 160px;
+        }
+        .metric-card .value { font-size: 1.4rem; font-weight: 700; color: #059669; }
+        .metric-card .name { font-size: 0.8rem; color: #666; }
+        .concern-tag {
+            display: inline-block; background: #e0e7ff; color: #3730a3;
+            font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 99px;
+            margin: 0.15rem; font-weight: 500;
+        }
+        footer { margin-top: 3rem; text-align: center; color: #999; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="nav-title">arcade-agent</span>
+        <a href="#overview">Overview</a>
+        <a href="#metrics">Metrics</a>
+        <a href="#diagram">Diagram</a>
+        <a href="#components">Components</a>
+        <a href="#smells">Smells (3)</a>
+        <a href="#dependencies">Dependencies</a>
+    </nav>
+
+    <h1 id="overview">Architecture Report</h1>
+    <p class="subtitle">arcade_agent &mdash; version local &mdash; recovered with pkg</p>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="number">200</div>
+            <div class="label">Entities</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">115</div>
+            <div class="label">Dependencies</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">5</div>
+            <div class="label">Components</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">3</div>
+            <div class="label">Smells</div>
+        </div>
+    </div>
+
+    
+    <h2 id="metrics">Quality Metrics</h2>
+    <div>
+    
+        <div class="metric-card">
+            <div class="value">0.852</div>
+            <div class="name">RCI</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.788</div>
+            <div class="name">TurboMQ</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.788</div>
+            <div class="name">BasicMQ</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.015</div>
+            <div class="name">IntraConnectivity</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.002</div>
+            <div class="name">InterConnectivity</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.000</div>
+            <div class="name">TwoWayPairRatio</div>
+        </div>
+    
+    </div>
+    
+
+    <h2 id="diagram">Architecture Diagram</h2>
+    <div class="card">
+        <pre class="mermaid">
+graph TD
+    Default["Default\n(21 entities)"]
+    Algorithms["Algorithms\n(65 entities)"]
+    Exporters["Exporters\n(15 entities)"]
+    Parsers["Parsers\n(58 entities)"]
+    Tools["Tools\n(41 entities)"]
+    Algorithms --> Tools
+    Default --> Algorithms
+    Default --> Parsers
+    Exporters --> Tools
+    Tools --> Default
+    Tools --> Parsers
+        </pre>
+    </div>
+
+    
+    <div class="rationale">Package-based grouping (depth=1 after common prefix '') with dependency-affinity facade refinement (15 entities reassigned).</div>
+    
+
+    <h2 id="components">Components</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Responsibility</th>
+                <th>#</th>
+                
+                <th>Entities</th>
+            </tr>
+        </thead>
+        <tbody>
+        
+            <tr>
+                <td><strong>Default</strong></td>
+                <td>Entities in (default)</td>
+                <td>21</td>
+                
+                <td class="entity-list">budget._deep_copy, budget.enforce_budget, budget.estimate_tokens, budget.truncate_result, cache._cache_dir, cache.cache_key, cache.get_cached_graph, cache.invalidate_cache, ... (+13 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Algorithms</strong></td>
+                <td>Entities in algorithms</td>
+                <td>65</td>
+                
+                <td class="entity-list">algorithms.acdc.acdc, algorithms.arc._arc_cluster_name, algorithms.arc._avg_structural_sim, algorithms.arc._build_concern_vectors, algorithms.arc._cluster_responsibility, algorithms.arc._js_divergence, algorithms.arc._js_similarity, algorithms.arc._kl_divergence, ... (+57 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Exporters</strong></td>
+                <td>Entities in exporters</td>
+                <td>15</td>
+                
+                <td class="entity-list">exporters.dot._escape_dot, exporters.dot.export_dot, exporters.html.AlgorithmResult, exporters.html.build_snapshot_mermaid, exporters.html.export_comparison_html, exporters.html.export_evolution_html, exporters.html.export_html, exporters.json.build_component_summary, ... (+7 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Parsers</strong></td>
+                <td>Entities in parsers</td>
+                <td>58</td>
+                
+                <td class="entity-list">models.graph, parsers.base.LanguageParser, parsers.base.LanguageParser.file_extensions, parsers.base.LanguageParser.language, parsers.base.LanguageParser.parse, parsers.base.detect_language, parsers.base.get_parser, parsers.base.register_parser, ... (+50 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Tools</strong></td>
+                <td>Entities in tools</td>
+                <td>41</td>
+                
+                <td class="entity-list">tools.adapters.mcp._make_summary, tools.adapters.mcp._store, tools.adapters.mcp.get_server, tools.adapters.mcp.main, tools.explain_component.explain_component, tools.find_relevant._score_entity, tools.find_relevant._tokenize, tools.find_relevant.find_relevant, ... (+33 more)</td>
+            </tr>
+        
+        </tbody>
+    </table>
+
+    <h2 id="smells">Architectural Smells (3)</h2>
+    
+    
+    <div class="smell medium">
+        <div class="smell-header">
+            <span class="badge medium">medium</span>
+            <strong>SmellType.DEPENDENCY_CYCLE</strong>
+        </div>
+        <p class="smell-detail">Circular dependency among 3 components: Algorithms <-> Default <-> Tools</p>
+        <p class="smell-detail"><strong>Why:</strong> Dependency cycles make components tightly coupled — you cannot change, test, or deploy any component in the cycle independently. This hinders maintainability, increases build times, and makes the system harder to understand.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Break the cycle by introducing an interface/abstraction that one component depends on, inverting the dependency direction. Consider the Dependency Inversion Principle (DIP).</p>
+        <p class="smell-detail"><strong>Affects:</strong> Algorithms, Default, Tools</p>
+    </div>
+    
+    <div class="smell medium">
+        <div class="smell-header">
+            <span class="badge medium">medium</span>
+            <strong>SmellType.CONCERN_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Default contains 21 entities but only 7 internal dependencies (0.33 per entity), suggesting multiple responsibilities.</p>
+        <p class="smell-detail"><strong>Why:</strong> Large components are harder to understand, test, and maintain. When their internals are also sparsely connected, that usually means the component is acting as a bucket for unrelated concerns rather than a cohesive module.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Default into smaller, focused components with single responsibilities.</p>
+        <p class="smell-detail"><strong>Affects:</strong> Default</p>
+    </div>
+    
+    <div class="smell high">
+        <div class="smell-header">
+            <span class="badge high">high</span>
+            <strong>SmellType.CONCERN_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Tools contains 41 entities but only 7 internal dependencies (0.17 per entity), suggesting multiple responsibilities.</p>
+        <p class="smell-detail"><strong>Why:</strong> Large components are harder to understand, test, and maintain. When their internals are also sparsely connected, that usually means the component is acting as a bucket for unrelated concerns rather than a cohesive module.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Tools into smaller, focused components with single responsibilities.</p>
+        <p class="smell-detail"><strong>Affects:</strong> Tools</p>
+    </div>
+    
+    
+
+    <h2 id="dependencies">Dependency Summary</h2>
+    <div class="card">
+        <table>
+            <thead><tr><th>Package</th><th>Entities</th></tr></thead>
+            <tbody>
+            
+                <tr>
+                    <td><code>parsers</code></td>
+                    <td>57</td>
+                </tr>
+            
+                <tr>
+                    <td><code>algorithms</code></td>
+                    <td>55</td>
+                </tr>
+            
+                <tr>
+                    <td><code>tools</code></td>
+                    <td>44</td>
+                </tr>
+            
+                <tr>
+                    <td><code>(default)</code></td>
+                    <td>19</td>
+                </tr>
+            
+                <tr>
+                    <td><code>exporters</code></td>
+                    <td>14</td>
+                </tr>
+            
+                <tr>
+                    <td><code>tools.adapters</code></td>
+                    <td>7</td>
+                </tr>
+            
+                <tr>
+                    <td><code>models</code></td>
+                    <td>4</td>
+                </tr>
+            
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        Generated by arcade-agent &mdash; software architecture analysis toolkit
+    </footer>
+
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });</script>
+</body>
+</html>

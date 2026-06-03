@@ -1,7 +1,14 @@
-# Generated analysis reports
+# Ad-hoc analysis reports (default output dir of analyze.py) are not tracked.
 arcade-report/
+
+# Loose HTML is ignored by default, but the committed demo reports under
+# examples/ and any reference HTML are kept on purpose.
 *.html
+!examples/*.html
 !references/*.html
+
+# Transient console capture from run_demo.sh (the script deletes it, this is a backstop).
+examples/*.console.txt
 
 # Python
 __pycache__/

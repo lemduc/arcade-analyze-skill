@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arcade-agent: java (local)</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #1a1a2e; background: #f8f9fa;
+            max-width: 1200px; margin: 0 auto; padding: 2rem; padding-top: 4rem;
+        }
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: #1e293b; padding: 0.6rem 2rem;
+            display: flex; align-items: center; gap: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        nav .nav-title {
+            font-weight: 700; color: #f8fafc; font-size: 0.85rem;
+            white-space: nowrap; margin-right: 0.5rem;
+        }
+        nav a {
+            color: #94a3b8; text-decoration: none; font-size: 0.8rem;
+            padding: 0.3rem 0.7rem; border-radius: 4px; transition: all 0.15s;
+            white-space: nowrap;
+        }
+        nav a:hover { color: #f8fafc; background: #334155; }
+        h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+        h2 { font-size: 1.3rem; margin: 2rem 0 1rem; border-bottom: 2px solid #e0e0e0; padding-bottom: 0.5rem; scroll-margin-top: 3.5rem; }
+        h3 { font-size: 1.1rem; margin: 1rem 0 0.5rem; }
+        .subtitle { color: #666; margin-bottom: 2rem; }
+        .stats {
+            display: flex; gap: 1.5rem; margin-bottom: 2rem; flex-wrap: wrap;
+        }
+        .stat-card {
+            background: white; border-radius: 8px; padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); min-width: 140px;
+        }
+        .stat-card .number { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
+        .stat-card .label { font-size: 0.85rem; color: #666; }
+        .card {
+            background: white; border-radius: 8px; padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;
+        }
+        .mermaid { text-align: center; margin: 1rem 0; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f1f5f9; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+        td { font-size: 0.9rem; }
+        .entity-list { font-family: monospace; font-size: 0.8rem; color: #555; max-width: 500px; }
+        .smell {
+            border-left: 4px solid #ccc; padding: 1rem 1.5rem; margin-bottom: 1rem;
+            background: white; border-radius: 0 8px 8px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .smell.high { border-left-color: #ef4444; }
+        .smell.medium { border-left-color: #f59e0b; }
+        .smell.low { border-left-color: #3b82f6; }
+        .smell-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .badge {
+            font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem;
+            border-radius: 99px; text-transform: uppercase;
+        }
+        .badge.high { background: #fef2f2; color: #dc2626; }
+        .badge.medium { background: #fffbeb; color: #d97706; }
+        .badge.low { background: #eff6ff; color: #2563eb; }
+        .smell-detail { margin: 0.5rem 0; font-size: 0.9rem; }
+        .smell-detail strong { display: inline-block; width: 100px; color: #555; }
+        .rationale { background: #f8fafc; padding: 1rem; border-radius: 6px; font-style: italic; color: #555; }
+        .metric-card {
+            display: inline-block; background: white; border-radius: 8px; padding: 1rem 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0.5rem; min-width: 160px;
+        }
+        .metric-card .value { font-size: 1.4rem; font-weight: 700; color: #059669; }
+        .metric-card .name { font-size: 0.8rem; color: #666; }
+        .concern-tag {
+            display: inline-block; background: #e0e7ff; color: #3730a3;
+            font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 99px;
+            margin: 0.15rem; font-weight: 500;
+        }
+        footer { margin-top: 3rem; text-align: center; color: #999; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <nav>
+        <span class="nav-title">arcade-agent</span>
+        <a href="#overview">Overview</a>
+        <a href="#metrics">Metrics</a>
+        <a href="#diagram">Diagram</a>
+        <a href="#components">Components</a>
+        <a href="#smells">Smells (6)</a>
+        <a href="#dependencies">Dependencies</a>
+    </nav>
+
+    <h1 id="overview">Architecture Report</h1>
+    <p class="subtitle">java &mdash; version local &mdash; recovered with pkg</p>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="number">1078</div>
+            <div class="label">Entities</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">3520</div>
+            <div class="label">Dependencies</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">13</div>
+            <div class="label">Components</div>
+        </div>
+        <div class="stat-card">
+            <div class="number">6</div>
+            <div class="label">Smells</div>
+        </div>
+    </div>
+
+    
+    <h2 id="metrics">Quality Metrics</h2>
+    <div>
+    
+        <div class="metric-card">
+            <div class="value">0.396</div>
+            <div class="name">RCI</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.263</div>
+            <div class="name">TurboMQ</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.263</div>
+            <div class="name">BasicMQ</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.011</div>
+            <div class="name">IntraConnectivity</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.007</div>
+            <div class="name">InterConnectivity</div>
+        </div>
+    
+        <div class="metric-card">
+            <div class="value">0.286</div>
+            <div class="name">TwoWayPairRatio</div>
+        </div>
+    
+    </div>
+    
+
+    <h2 id="diagram">Architecture Diagram</h2>
+    <div class="card">
+        <pre class="mermaid">
+graph TD
+    Default["Default\n(71 entities)"]
+    Antipattern["Antipattern\n(42 entities)"]
+    Clustering["Clustering\n(343 entities)"]
+    Facts["Facts\n(145 entities)"]
+    Functiongraph["Functiongraph\n(27 entities)"]
+    Jira["Jira\n(4 entities)"]
+    Metrics["Metrics\n(110 entities)"]
+    Topics["Topics\n(94 entities)"]
+    Util["Util\n(52 entities)"]
+    Visualization["Visualization\n(41 entities)"]
+    Util2["Util2\n(38 entities)"]
+    Json["Json\n(91 entities)"]
+    Matrix["Matrix\n(20 entities)"]
+    Antipattern --> Clustering
+    Antipattern --> Json
+    Antipattern --> Topics
+    Antipattern --> Util
+    Clustering --> Facts
+    Clustering --> Json
+    Clustering --> Metrics
+    Clustering --> Topics
+    Clustering --> Util
+    Clustering --> Util2
+    Clustering --> Visualization
+    Default --> Clustering
+    Facts --> Antipattern
+    Facts --> Clustering
+    Facts --> Functiongraph
+    Facts --> Json
+    Facts --> Util
+    Facts --> Util2
+    Json --> Facts
+    Metrics --> Clustering
+    Metrics --> Default
+    Metrics --> Json
+    Metrics --> Matrix
+    Metrics --> Util
+    Metrics --> Util2
+    Topics --> Clustering
+    Topics --> Json
+    Topics --> Util
+    Topics --> Util2
+    Topics --> Visualization
+    Util --> Clustering
+    Util --> Facts
+    Util --> Util2
+    Visualization --> Clustering
+    Visualization --> Topics
+    Visualization --> Util
+        </pre>
+    </div>
+
+    
+    <div class="rationale">Package-based grouping (depth=2 after common prefix 'edu.usc.softarch') with dependency-affinity facade refinement (181 entities reassigned).</div>
+    
+
+    <h2 id="components">Components</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th>Responsibility</th>
+                <th>#</th>
+                
+                <th>Entities</th>
+            </tr>
+        </thead>
+        <tbody>
+        
+            <tr>
+                <td><strong>Default</strong></td>
+                <td>Entities in (default)</td>
+                <td>71</td>
+                
+                <td class="entity-list">BipartiteGraph, BipartiteGraph.BipartiteGraph, BipartiteGraph.XOR, BipartiteGraph.addedge, BipartiteGraph.findAugmentPath, BipartiteGraph.findPath, BipartiteGraph.isLeft, BipartiteGraph.isRight, ... (+63 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Antipattern</strong></td>
+                <td>Entities in arcade.antipattern</td>
+                <td>42</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.antipattern.Smell, edu.usc.softarch.arcade.antipattern.SmellCollection, edu.usc.softarch.arcade.antipattern.detection.ArchSmellDetector, edu.usc.softarch.arcade.antipattern.detection.ArchSmellDetector.ArchSmellDetector, edu.usc.softarch.arcade.antipattern.detection.ArchSmellDetector.main, edu.usc.softarch.arcade.antipattern.detection.ArchSmellDetector.run, edu.usc.softarch.arcade.antipattern.detection.SmellToIssuesCorrelation, edu.usc.softarch.arcade.antipattern.detection.SmellToIssuesCorrelation.main, ... (+34 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Clustering</strong></td>
+                <td>Entities in arcade.clustering</td>
+                <td>343</td>
+                
+                <td class="entity-list">StringUtil.containStr, StringUtil.dir2pkg, StringUtil.extractOrgSuffix, StringUtil.extractPkgPrefix, StringUtil.extractVersionPretty, StringUtil.formatIssueVersion, StringUtil.isValidFilename, StringUtil.printStringSet, ... (+335 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Facts</strong></td>
+                <td>Entities in arcade.facts</td>
+                <td>145</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.clustering.data.FeatureVectors.FeatureVectors, edu.usc.softarch.arcade.clustering.data.FeatureVectors.deserializeFFVectors, edu.usc.softarch.arcade.clustering.data.FeatureVectors.equals, edu.usc.softarch.arcade.clustering.data.FeatureVectors.getFeatureVectorNames, edu.usc.softarch.arcade.clustering.data.FeatureVectors.getNameToFeatureSetMap, edu.usc.softarch.arcade.clustering.data.FeatureVectors.getNamesInFeatureSet, edu.usc.softarch.arcade.clustering.data.FeatureVectors.getNumSourceEntities, edu.usc.softarch.arcade.clustering.data.FeatureVectors.getSerializationMapper, ... (+137 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Functiongraph</strong></td>
+                <td>Entities in arcade.functiongraph</td>
+                <td>27</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.functiongraph.StringEdge, edu.usc.softarch.arcade.functiongraph.StringEdge.StringEdge, edu.usc.softarch.arcade.functiongraph.StringEdge.equals, edu.usc.softarch.arcade.functiongraph.StringEdge.getSrcStr, edu.usc.softarch.arcade.functiongraph.StringEdge.getTgtStr, edu.usc.softarch.arcade.functiongraph.StringEdge.getType, edu.usc.softarch.arcade.functiongraph.StringEdge.hashCode, edu.usc.softarch.arcade.functiongraph.StringEdge.initialize, ... (+19 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Jira</strong></td>
+                <td>Entities in arcade.jira</td>
+                <td>4</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.jira.JiraClientExample, edu.usc.softarch.arcade.jira.JiraClientExample.main, edu.usc.softarch.arcade.jira.JiraClientPrototype, edu.usc.softarch.arcade.jira.JiraClientPrototype.main</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Metrics</strong></td>
+                <td>Entities in arcade.metrics</td>
+                <td>110</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.metrics.DecayMetricAnalyzer, edu.usc.softarch.arcade.metrics.DecayMetricAnalyzer.getDescriptiveStatistics, edu.usc.softarch.arcade.metrics.DecayMetricAnalyzer.main, edu.usc.softarch.arcade.metrics.DecayMetricAnalyzer.run, edu.usc.softarch.arcade.metrics.DecayMetricAnalyzer.runBatch, edu.usc.softarch.arcade.metrics.DecayMetricAnalyzer.runSingle, edu.usc.softarch.arcade.metrics.MoJoEvolutionAnalyzer, edu.usc.softarch.arcade.metrics.MoJoEvolutionAnalyzer.doMoJoFMComparison, ... (+102 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Topics</strong></td>
+                <td>Entities in arcade.topics</td>
+                <td>94</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.topics.Concern, edu.usc.softarch.arcade.topics.Concern.Concern, edu.usc.softarch.arcade.topics.Concern.serialize, edu.usc.softarch.arcade.topics.DocTopicItem, edu.usc.softarch.arcade.topics.DocTopicItem.DocTopicItem, edu.usc.softarch.arcade.topics.DocTopicItem.addTopic, edu.usc.softarch.arcade.topics.DocTopicItem.computeConcern, edu.usc.softarch.arcade.topics.DocTopicItem.deserialize, ... (+86 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Util</strong></td>
+                <td>Entities in arcade.util</td>
+                <td>52</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.CodeMaatHelper, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.batchRun, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.isBatch, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.main, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.parseEntity, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.processCEntry, edu.usc.softarch.arcade.antipattern.detection.coupling.CodeMaatHelper.processEntry, ... (+44 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Visualization</strong></td>
+                <td>Entities in arcade.visualization</td>
+                <td>41</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.visualization.ArchitectureTableModel, edu.usc.softarch.arcade.visualization.ArchitectureTableModel.getHighestValue, edu.usc.softarch.arcade.visualization.ArchitectureTableModel.refresh, edu.usc.softarch.arcade.visualization.MainFrame, edu.usc.softarch.arcade.visualization.MainFrame.MainFrame, edu.usc.softarch.arcade.visualization.MainFrame.actionPerformed, edu.usc.softarch.arcade.visualization.MainFrame.loadArguments, edu.usc.softarch.arcade.visualization.MainFrame.loadClusterer, ... (+33 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Util2</strong></td>
+                <td>Entities in util</td>
+                <td>38</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.util.CLI.parseArguments, edu.usc.softarch.arcade.util.CLI.setMessageLevel, edu.usc.softarch.util.EnhancedHashSet, edu.usc.softarch.util.EnhancedHashSet.EnhancedHashSet, edu.usc.softarch.util.EnhancedHashSet.difference, edu.usc.softarch.util.EnhancedHashSet.intersection, edu.usc.softarch.util.EnhancedHashSet.intersectionArray, edu.usc.softarch.util.EnhancedHashSet.intersectionSize, ... (+30 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Json</strong></td>
+                <td>Entities in util.json</td>
+                <td>91</td>
+                
+                <td class="entity-list">edu.usc.softarch.arcade.antipattern.Smell.Smell, edu.usc.softarch.arcade.antipattern.Smell.addCluster, edu.usc.softarch.arcade.antipattern.Smell.addClusterCollection, edu.usc.softarch.arcade.antipattern.Smell.containsCluster, edu.usc.softarch.arcade.antipattern.Smell.deserialize, edu.usc.softarch.arcade.antipattern.Smell.equals, edu.usc.softarch.arcade.antipattern.Smell.getSmellType, edu.usc.softarch.arcade.antipattern.Smell.getTopicNum, ... (+83 more)</td>
+            </tr>
+        
+            <tr>
+                <td><strong>Matrix</strong></td>
+                <td>Entities in util.matrix</td>
+                <td>20</td>
+                
+                <td class="entity-list">edu.usc.softarch.util.matrix.Cell, edu.usc.softarch.util.matrix.Cell.Cell, edu.usc.softarch.util.matrix.Cell.compareTo, edu.usc.softarch.util.matrix.Cell.equals, edu.usc.softarch.util.matrix.Cell.hashCode, edu.usc.softarch.util.matrix.CellValueCalculator, edu.usc.softarch.util.matrix.CellValueCalculator.computeCellValue, edu.usc.softarch.util.matrix.CellValueValidator, ... (+12 more)</td>
+            </tr>
+        
+        </tbody>
+    </table>
+
+    <h2 id="smells">Architectural Smells (6)</h2>
+    
+    
+    <div class="smell high">
+        <div class="smell-header">
+            <span class="badge high">high</span>
+            <strong>SmellType.DEPENDENCY_CYCLE</strong>
+        </div>
+        <p class="smell-detail">Circular dependency among 9 components: Antipattern <-> Clustering <-> Default <-> Facts <-> Json <-> Metrics <-> Topics <-> Util <-> Visualization</p>
+        <p class="smell-detail"><strong>Why:</strong> Dependency cycles make components tightly coupled — you cannot change, test, or deploy any component in the cycle independently. This hinders maintainability, increases build times, and makes the system harder to understand.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Break the cycle by introducing an interface/abstraction that one component depends on, inverting the dependency direction. Consider the Dependency Inversion Principle (DIP).</p>
+        <p class="smell-detail"><strong>Affects:</strong> Antipattern, Clustering, Default, Facts, Json, Metrics, Topics, Util, Visualization</p>
+    </div>
+    
+    <div class="smell high">
+        <div class="smell-header">
+            <span class="badge high">high</span>
+            <strong>SmellType.CONCERN_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Default contains 71 entities but only 2 internal dependencies (0.03 per entity), suggesting multiple responsibilities.</p>
+        <p class="smell-detail"><strong>Why:</strong> Large components are harder to understand, test, and maintain. When their internals are also sparsely connected, that usually means the component is acting as a bucket for unrelated concerns rather than a cohesive module.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Default into smaller, focused components with single responsibilities.</p>
+        <p class="smell-detail"><strong>Affects:</strong> Default</p>
+    </div>
+    
+    <div class="smell medium">
+        <div class="smell-header">
+            <span class="badge medium">medium</span>
+            <strong>SmellType.CONCERN_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Functiongraph contains 27 entities but only 1 internal dependencies (0.04 per entity), suggesting multiple responsibilities.</p>
+        <p class="smell-detail"><strong>Why:</strong> Large components are harder to understand, test, and maintain. When their internals are also sparsely connected, that usually means the component is acting as a bucket for unrelated concerns rather than a cohesive module.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Functiongraph into smaller, focused components with single responsibilities.</p>
+        <p class="smell-detail"><strong>Affects:</strong> Functiongraph</p>
+    </div>
+    
+    <div class="smell medium">
+        <div class="smell-header">
+            <span class="badge medium">medium</span>
+            <strong>SmellType.CONCERN_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Util2 contains 38 entities but only 2 internal dependencies (0.05 per entity), suggesting multiple responsibilities.</p>
+        <p class="smell-detail"><strong>Why:</strong> Large components are harder to understand, test, and maintain. When their internals are also sparsely connected, that usually means the component is acting as a bucket for unrelated concerns rather than a cohesive module.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Util2 into smaller, focused components with single responsibilities.</p>
+        <p class="smell-detail"><strong>Affects:</strong> Util2</p>
+    </div>
+    
+    <div class="smell medium">
+        <div class="smell-header">
+            <span class="badge medium">medium</span>
+            <strong>SmellType.LINK_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Clustering is depended on by 7 other components (58% of all components).</p>
+        <p class="smell-detail"><strong>Why:</strong> A component with too many dependents becomes a bottleneck. Any change to it can cascade across the entire system, making evolution risky and expensive.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Clustering into smaller interfaces so dependents only couple to what they actually use (ISP).</p>
+        <p class="smell-detail"><strong>Affects:</strong> Clustering</p>
+    </div>
+    
+    <div class="smell medium">
+        <div class="smell-header">
+            <span class="badge medium">medium</span>
+            <strong>SmellType.LINK_OVERLOAD</strong>
+        </div>
+        <p class="smell-detail">Util is depended on by 6 other components (50% of all components).</p>
+        <p class="smell-detail"><strong>Why:</strong> A component with too many dependents becomes a bottleneck. Any change to it can cascade across the entire system, making evolution risky and expensive.</p>
+        <p class="smell-detail"><strong>Fix:</strong> Consider splitting Util into smaller interfaces so dependents only couple to what they actually use (ISP).</p>
+        <p class="smell-detail"><strong>Affects:</strong> Util</p>
+    </div>
+    
+    
+
+    <h2 id="dependencies">Dependency Summary</h2>
+    <div class="card">
+        <table>
+            <thead><tr><th>Package</th><th>Entities</th></tr></thead>
+            <tbody>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.data</code></td>
+                    <td>123</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.topics</code></td>
+                    <td>102</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.metrics.data</code></td>
+                    <td>93</td>
+                </tr>
+            
+                <tr>
+                    <td><code>(default)</code></td>
+                    <td>80</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.util</code></td>
+                    <td>69</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.simmeasures</code></td>
+                    <td>64</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.util.json</code></td>
+                    <td>60</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.metrics.evolution</code></td>
+                    <td>55</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.util</code></td>
+                    <td>42</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.facts.issues.handlers</code></td>
+                    <td>41</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.metrics.decay</code></td>
+                    <td>39</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.facts.design</code></td>
+                    <td>37</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.facts</code></td>
+                    <td>36</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering</code></td>
+                    <td>35</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.acdc.data</code></td>
+                    <td>35</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.acdc.patterns</code></td>
+                    <td>34</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.functiongraph</code></td>
+                    <td>34</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.visualization.clustering</code></td>
+                    <td>34</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.facts.dependencies</code></td>
+                    <td>33</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.antipattern.detection.interfacebased</code></td>
+                    <td>24</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.facts.issues</code></td>
+                    <td>23</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.facts.smells</code></td>
+                    <td>23</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.antipattern</code></td>
+                    <td>22</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.util.matrix</code></td>
+                    <td>20</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.antipattern.detection.coupling</code></td>
+                    <td>19</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.visualization.topics</code></td>
+                    <td>16</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.visualization.components</code></td>
+                    <td>15</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.criteria.serialization</code></td>
+                    <td>11</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.metrics</code></td>
+                    <td>11</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.visualization</code></td>
+                    <td>11</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.antipattern.detection.dependency</code></td>
+                    <td>10</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.criteria</code></td>
+                    <td>9</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.antipattern.detection</code></td>
+                    <td>8</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.antipattern.detection.concern</code></td>
+                    <td>8</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.jira</code></td>
+                    <td>8</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.acdc</code></td>
+                    <td>7</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.clustering.criteria.stopping</code></td>
+                    <td>7</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.topics.exceptions</code></td>
+                    <td>6</td>
+                </tr>
+            
+                <tr>
+                    <td><code>edu.usc.softarch.arcade.util.statistic</code></td>
+                    <td>4</td>
+                </tr>
+            
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        Generated by arcade-agent &mdash; software architecture analysis toolkit
+    </footer>
+
+    <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });</script>
+</body>
+</html>

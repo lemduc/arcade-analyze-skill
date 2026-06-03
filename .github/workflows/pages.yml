@@ -1,0 +1,46 @@
+name: Deploy demo reports to GitHub Pages
+
+# Publishes the committed demo reports under examples/ to GitHub Pages so the
+# interactive HTML (which GitHub can't render inline in the repo) is browsable
+# at https://lemduc.github.io/arcade-analyze-skill/.
+#
+# One-time setup: repo Settings → Pages → Source: "GitHub Actions".
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "examples/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress production deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload examples/ as the Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: examples
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

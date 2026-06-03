@@ -27,11 +27,20 @@ import subprocess
 import sys
 from pathlib import Path
 
-DEFAULT_ARCADE_HOME = "/Users/lemduc/Desktop/side_project_workspace/arcade-agent"
+# No hardcoded default: arcade-agent lives in a different place on every machine,
+# so we resolve it from --arcade-home, then $ARCADE_AGENT_HOME, and error out with
+# guidance if neither is set rather than guessing (or leaking a personal path).
+DEFAULT_ARCADE_HOME = None
 
 
 def resolve_home(cli_home: str | None) -> Path:
     candidate = cli_home or os.environ.get("ARCADE_AGENT_HOME") or DEFAULT_ARCADE_HOME
+    if not candidate:
+        sys.exit(
+            "[arcade-analyze] arcade-agent location is not set.\n"
+            "  Pass --arcade-home /path/to/arcade-agent, or set the\n"
+            "  ARCADE_AGENT_HOME environment variable to your arcade-agent checkout."
+        )
     home = Path(candidate).expanduser().resolve()
     if not (home / "src" / "arcade_agent").is_dir():
         sys.exit(

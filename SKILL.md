@@ -57,11 +57,14 @@ ARCADE_HOME=/Users/lemduc/Desktop/side_project_workspace/arcade-agent
 ```
 
 `<skill-dir>` is the directory containing this SKILL.md. The wrapper resolves the
-arcade-agent location from `--arcade-home`, then `$ARCADE_AGENT_HOME`, then a
-built-in default — and it puts `<home>/src` on `sys.path` itself, so it works
-even though arcade-agent's editable-install `.pth` points at a stale path. Don't
-try to `import arcade_agent` directly or `pip install` anything; just use the
-venv interpreter as shown.
+arcade-agent location from `--arcade-home`, then the `$ARCADE_AGENT_HOME`
+environment variable (it errors out with guidance if neither is set) — and it
+puts `<home>/src` on `sys.path` itself, so it works even though arcade-agent's
+editable-install `.pth` points at a stale path. Don't try to `import
+arcade_agent` directly or `pip install` anything; just use the venv interpreter
+as shown. On this machine arcade-agent lives at
+`/Users/lemduc/Desktop/side_project_workspace/arcade-agent`, so set
+`ARCADE_HOME` / `ARCADE_AGENT_HOME` to that (as the example above does).
 
 ### Key options
 

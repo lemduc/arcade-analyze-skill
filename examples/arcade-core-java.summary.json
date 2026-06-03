@@ -1,0 +1,124 @@
+{
+  "repo": "java",
+  "version": "local",
+  "language": "java",
+  "algorithm": "pkg",
+  "num_entities": 1078,
+  "num_edges": 3520,
+  "num_components": 13,
+  "components": [
+    {
+      "name": "Default",
+      "size": 71
+    },
+    {
+      "name": "Antipattern",
+      "size": 42
+    },
+    {
+      "name": "Clustering",
+      "size": 343
+    },
+    {
+      "name": "Facts",
+      "size": 145
+    },
+    {
+      "name": "Functiongraph",
+      "size": 27
+    },
+    {
+      "name": "Jira",
+      "size": 4
+    },
+    {
+      "name": "Metrics",
+      "size": 110
+    },
+    {
+      "name": "Topics",
+      "size": 94
+    },
+    {
+      "name": "Util",
+      "size": 52
+    },
+    {
+      "name": "Visualization",
+      "size": 41
+    },
+    {
+      "name": "Util2",
+      "size": 38
+    },
+    {
+      "name": "Json",
+      "size": 91
+    },
+    {
+      "name": "Matrix",
+      "size": 20
+    }
+  ],
+  "num_smells": 6,
+  "smells": [
+    {
+      "type": "Dependency Cycle",
+      "severity": "high",
+      "description": "Circular dependency among 9 components: Antipattern <-> Clustering <-> Default <-> Facts <-> Json <-> Metrics <-> Topics <-> Util <-> Visualization"
+    },
+    {
+      "type": "Concern Overload",
+      "severity": "high",
+      "description": "Default contains 71 entities but only 2 internal dependencies (0.03 per entity), suggesting multiple responsibilities."
+    },
+    {
+      "type": "Concern Overload",
+      "severity": "medium",
+      "description": "Functiongraph contains 27 entities but only 1 internal dependencies (0.04 per entity), suggesting multiple responsibilities."
+    },
+    {
+      "type": "Concern Overload",
+      "severity": "medium",
+      "description": "Util2 contains 38 entities but only 2 internal dependencies (0.05 per entity), suggesting multiple responsibilities."
+    },
+    {
+      "type": "Link/Upstream Overload",
+      "severity": "medium",
+      "description": "Clustering is depended on by 7 other components (58% of all components)."
+    },
+    {
+      "type": "Link/Upstream Overload",
+      "severity": "medium",
+      "description": "Util is depended on by 6 other components (50% of all components)."
+    }
+  ],
+  "metrics": [
+    {
+      "name": "RCI",
+      "value": 0.3957
+    },
+    {
+      "name": "TurboMQ",
+      "value": 0.2633
+    },
+    {
+      "name": "BasicMQ",
+      "value": 0.2633
+    },
+    {
+      "name": "IntraConnectivity",
+      "value": 0.011
+    },
+    {
+      "name": "InterConnectivity",
+      "value": 0.0066
+    },
+    {
+      "name": "TwoWayPairRatio",
+      "value": 0.2857
+    }
+  ],
+  "report_html": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-core-java.html",
+  "report_mermaid": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-core-java.md"
+}

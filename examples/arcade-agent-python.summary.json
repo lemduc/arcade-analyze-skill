@@ -1,0 +1,77 @@
+{
+  "repo": "arcade_agent",
+  "version": "local",
+  "language": "python",
+  "algorithm": "pkg",
+  "num_entities": 200,
+  "num_edges": 115,
+  "num_components": 5,
+  "components": [
+    {
+      "name": "Default",
+      "size": 21
+    },
+    {
+      "name": "Algorithms",
+      "size": 65
+    },
+    {
+      "name": "Exporters",
+      "size": 15
+    },
+    {
+      "name": "Parsers",
+      "size": 58
+    },
+    {
+      "name": "Tools",
+      "size": 41
+    }
+  ],
+  "num_smells": 3,
+  "smells": [
+    {
+      "type": "Dependency Cycle",
+      "severity": "medium",
+      "description": "Circular dependency among 3 components: Algorithms <-> Default <-> Tools"
+    },
+    {
+      "type": "Concern Overload",
+      "severity": "medium",
+      "description": "Default contains 21 entities but only 7 internal dependencies (0.33 per entity), suggesting multiple responsibilities."
+    },
+    {
+      "type": "Concern Overload",
+      "severity": "high",
+      "description": "Tools contains 41 entities but only 7 internal dependencies (0.17 per entity), suggesting multiple responsibilities."
+    }
+  ],
+  "metrics": [
+    {
+      "name": "RCI",
+      "value": 0.8522
+    },
+    {
+      "name": "TurboMQ",
+      "value": 0.7884
+    },
+    {
+      "name": "BasicMQ",
+      "value": 0.7884
+    },
+    {
+      "name": "IntraConnectivity",
+      "value": 0.015
+    },
+    {
+      "name": "InterConnectivity",
+      "value": 0.0022
+    },
+    {
+      "name": "TwoWayPairRatio",
+      "value": 0.0
+    }
+  ],
+  "report_html": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-agent-python.html",
+  "report_mermaid": "/Users/lemduc/Desktop/side_project_workspace/arcade-analyze-skill/examples/arcade-agent-python.md"
+}
