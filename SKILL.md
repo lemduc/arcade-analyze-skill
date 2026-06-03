@@ -11,8 +11,8 @@ description: >-
   of X", "recover the architecture", "what does this codebase look like
   structurally", "find architectural smells / cycles", "visualize the
   components", "is this code well-modularized", or pointing at a Java / Python /
-  C / C++ repo and asking how it's organized. Works on a local directory or a
-  git URL.
+  C / C++ / TypeScript / JavaScript / Go repo and asking how it's organized.
+  Works on a local directory or a git URL.
 ---
 
 # arcade-analyze
@@ -226,10 +226,13 @@ when breached).
 - "enforce rules / no cycles allowed / fail CI if / conformance / is it layered" → `validate.py`
 - "whole system / these microservices / multiple repos / cross-module deps" → `analyze_system.py`
 
-**Language support:** Java, Python, C/C++ are fully supported. TypeScript/JS and
-Go support depend on the arcade-agent version (see `ROADMAP.md` Phase 4) — check
-`<arcade-home>/src/arcade_agent/parsers/` or just try with `--language` and read
-the error.
+**Language support:** Java, Python, C/C++, **TypeScript/JavaScript** (`.ts/.tsx/
+.js/.jsx`), and **Go** are supported (`--language typescript` / `go`). TypeScript
+and Go need their tree-sitter grammars in the arcade-agent venv (`tree-sitter-
+typescript`, `tree-sitter-go` — declared in arcade-agent's optional `languages`
+deps). Very large TS trees (~2k+ files) parse slowly; scope with `--source-root`
+or point at a sub-package. If a language errors, check
+`<arcade-home>/src/arcade_agent/parsers/`.
 
 ---
 

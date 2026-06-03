@@ -50,6 +50,9 @@ Treat metrics as signals to investigate, not pass/fail grades.
 
 ## Supported languages
 
-Java, Python, C, C++ have full tree-sitter parsing support. TypeScript/JavaScript
-is a stub (limited). Pass `--language` explicitly on polyglot repos to avoid
-mis-detection.
+Java, Python, C, C++, TypeScript/JavaScript (`.ts/.tsx/.js/.jsx`), and Go have
+tree-sitter parsing support. TypeScript and Go require their grammars in the
+arcade-agent venv (`tree-sitter-typescript`, `tree-sitter-go`, in arcade-agent's
+optional `languages` deps). Pass `--language` explicitly on polyglot repos to
+avoid mis-detection. Very large TypeScript trees parse slowly — scope with
+`--source-root` or point at a sub-package.

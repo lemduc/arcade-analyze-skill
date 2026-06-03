@@ -5,10 +5,11 @@ A [Claude Code](https://claude.com/claude-code) skill that recovers and
 [arcade-agent](https://github.com/lemduc/arcade-agent) — the Python successor to
 USC's ARCADE workbench (Architecture Recovery, Change, And Decay Evaluator).
 
-Point it at a Java / Python / C / C++ project (local path or git URL) and it runs
-the full pipeline — **ingest → parse → recover → detect smells → compute metrics
-→ visualize** — then opens an interactive HTML report with the component diagram,
-dependency graph, architectural smells, and quality metrics.
+Point it at a Java / Python / C / C++ / TypeScript / JavaScript / Go project
+(local path or git URL) and it runs the full pipeline — **ingest → parse →
+recover → detect smells → compute metrics → visualize** — then opens an
+interactive HTML report with the component diagram, dependency graph,
+architectural smells, and quality metrics.
 
 ## Demo
 

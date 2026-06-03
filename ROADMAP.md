@@ -37,8 +37,9 @@ Each phase below adds a meaningful capability. Items are marked as:
 | Multi-module / microservices system view | ✅ done (`scripts/analyze_system.py`) |
 | CI/CD architecture drift gate | ✅ done (`assets/arch-gate.yml` + `validate`/`diff` exit codes) |
 | Architecture Decision Record (ADR) generation | ❌ Phase 5 |
-| TypeScript / JavaScript support | ⏳ Phase 4a — arcade-agent core (stub today) |
-| Go support | ⏳ Phase 4b — arcade-agent core |
+| TypeScript / JavaScript support | ✅ done (arcade-agent `parsers/typescript.py`) |
+| Go support | ✅ done (arcade-agent `parsers/go.py`) |
+| Incremental parsing for large repos | ⏳ Phase 4c — deferred (core cache work) |
 
 ---
 
@@ -203,30 +204,40 @@ arcade-agent are not packaged for reuse. This item:
 
 ---
 
-## Phase 4 — Language and scale breadth
+## Phase 4 — Language and scale breadth (4a, 4b, 4d done; 4c open)
 
 **Theme:** architects work on TypeScript web apps, Go microservices, and Rust
-systems — not just Java. Partial support is worse than no support for professional
-use.
+systems — not just Java. These are arcade-agent **core** parser additions.
 
-**Effort:** 4–6 weeks per language.
+### 4a. TypeScript / JavaScript — full parser `[arcade-agent]` ✅ DONE
+Replaced the stub with a real tree-sitter parser
+(`arcade-agent/src/arcade_agent/parsers/typescript.py`): extracts classes,
+interfaces, enums, top-level functions, const-arrow functions, and methods, with
+import/extends/implements edges. TS imports reference file paths, so relative
+specifiers are resolved to the target module to build cross-file edges. Registered
+for `.ts/.tsx/.js/.jsx/.mjs/.cjs`; `ingest` and `tree-sitter-typescript` wired up.
+Verified on synthetic projects (edges + `implements` resolve) and real repos.
+**Known limitation:** the per-entity AST walk makes very large trees (~2k files)
+slow — addressed by 4c.
 
-### 4a. TypeScript / JavaScript — full parser `[arcade-agent]`
-The TypeScript parser is a stub in arcade-agent. Complete it with tree-sitter
-(imports, class/function declarations, module boundaries). Many modern architectures
-are frontend-heavy; an architect needs to analyze the whole system.
+### 4b. Go parser `[arcade-agent]` ✅ DONE
+New tree-sitter Go parser (`parsers/go.py`): each directory maps to a Go package
+(a component), extracting structs, interfaces, functions, and methods (by
+receiver). Cross-package edges come from qualified references (`pkg.Symbol`,
+including `qualified_type` in signatures) resolved against imports; intra-package
+edges from sibling references. `tree-sitter-go` added to optional deps. Verified
+on a synthetic multi-package project (intra- and cross-package edges resolve).
+**Note:** verified on synthetic Go; real-world large-repo tuning still pending.
 
-### 4b. Go parser `[arcade-agent]`
-Go is the dominant language for cloud-native microservices. Package-level
-architecture recovery maps cleanly to Go's module/package system. Prioritise over
-Rust given frequency in enterprise codebases.
-
-### 4c. Incremental parsing for large repos `[arcade-agent]`
-Parsing 5000+ Java files (like arcade_core's full tree) takes tens of seconds.
-The mtime-based cache in arcade-agent helps after the first run, but architects
-working interactively on large repos need sub-second re-analysis on changed files.
+### 4c. Incremental parsing for large repos `[arcade-agent]` ⏳ OPEN
+Parsing thousands of files (arcade_core's full tree, or a ~2k-file TS app) takes
+tens of seconds to minutes. The mtime-based cache helps after the first run, but
+interactive work on large repos needs sub-second re-analysis on changed files.
 Implement a file-level incremental parser that re-parses only changed files and
-merges the delta into the cached graph.
+merges the delta into the cached graph. **Deferred:** this is core cache surgery
+with real correctness risk (stale edges across files), and the existing
+whole-graph cache already covers the common "re-run on unchanged code" case — so
+the marginal value is lower than the risk for now.
 
 ### 4d. Multi-module / microservices view `[skill]` ✅ DONE
 Shipped as `scripts/analyze_system.py`: analyzes several module/service roots,
@@ -285,17 +296,19 @@ codebases.
 | ✅ **Done** (Phase 1) | 1a–1d | Comparison, drift, Q&A, remote repos |
 | ✅ **Done** (Phase 2) | 2a–2d | Stakeholder summary, DSM, C4 export, refactoring roadmap |
 | ✅ **Done** (Phase 3) | 3a–3c | Rules, layered detection, CI gate |
+| ✅ **Done** (Phase 4a) | 4a | TypeScript / JavaScript parser (arcade-agent core) |
+| ✅ **Done** (Phase 4b) | 4b | Go parser (arcade-agent core) |
 | ✅ **Done** (Phase 4d) | 4d | Multi-module / microservices view |
-| **Now** (Phase 4a–4c) | TS parser, Go parser, incremental | arcade-agent **core** work — new parsers + deps |
+| **Now** (Phase 4c) | incremental parsing | Sub-second re-analysis on large repos |
 | **Later** (Phase 5) | Hosting, ADRs, trends, VS Code | Team-scale collaboration |
 
-Phases 1–3 plus 4d are the "genuinely useful for a software architect" core, and
-all of it lives at the skill layer (riding on arcade-agent's existing parse +
-recover + smells + metrics). The remaining Phase 4 items (4a–4c) are genuine
-arcade-agent **core** efforts: each new language parser is a tree-sitter
-integration in the library (a new dependency + a parser module modelled on
-`parsers/python.py`), and incremental parsing is cache surgery. They benefit
-every consumer of arcade-agent, not just this skill, so they belong upstream.
+Phases 1–3 plus 4d are the "genuinely useful for a software architect" core and
+live entirely at the skill layer (riding on arcade-agent's parse + recover +
+smells + metrics). Phase 4a (TypeScript) and 4b (Go) extend arcade-agent's
+**core** with new tree-sitter parsers — so Java, Python, C/C++, TypeScript/JS,
+and Go are now all analysable. The one remaining Phase 4 item, 4c (incremental
+parsing), is deferred: it's cache surgery with real correctness risk, and the
+existing whole-graph cache already covers the common re-run case.
 
 ---
 
