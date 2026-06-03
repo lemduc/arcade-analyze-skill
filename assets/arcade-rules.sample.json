@@ -1,0 +1,31 @@
+{
+  "$comment": "Sample architecture rules for `validate.py`. Copy to your repo root as .arcade-rules.json and edit. Component names come from the recovered architecture (run analyze/summary to see them). 'from'/'to' are glob patterns (fnmatch) over component names.",
+  "rules": [
+    {
+      "name": "no-dependency-cycles",
+      "type": "no-cycles"
+    },
+    {
+      "name": "presentation-must-not-touch-persistence",
+      "type": "forbidden-dependency",
+      "from": "*Presentation*",
+      "to": "*Persistence*"
+    },
+    {
+      "name": "modularity-floor",
+      "type": "metric-gate",
+      "metric": "TurboMQ",
+      "min": 0.4
+    },
+    {
+      "name": "no-god-component",
+      "type": "max-component-size",
+      "max": 200
+    },
+    {
+      "name": "limit-bottlenecks",
+      "type": "max-fan-in",
+      "max": 6
+    }
+  ]
+}

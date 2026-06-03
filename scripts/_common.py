@@ -88,6 +88,26 @@ def emit_summary(summary: dict) -> None:
     print(SUMMARY_END)
 
 
+# Generic directory names that aren't a useful project label on their own.
+_GENERIC_DIR_NAMES = {
+    "java", "kotlin", "scala", "main", "src", "srcs", "app", "lib",
+    "source", "sources", "python", "py", "go", "cmd", "pkg",
+}
+
+
+def _friendly_name(source: str, fallback: str) -> str:
+    """Derive a human project name. ingest() uses the dir basename, which for a
+    Maven layout is 'java' (from src/main/java). Climb to the first meaningful
+    ancestor so reports/filenames read 'arcade_core', not 'java'."""
+    if source.startswith(("http://", "https://", "git@")):
+        return fallback
+    p = Path(source).expanduser().resolve()
+    for cand in [p, *p.parents]:
+        if cand.name and cand.name.lower() not in _GENERIC_DIR_NAMES:
+            return cand.name
+    return fallback
+
+
 def ingest_and_parse(source: str, language: str | None,
                      source_root: str | None = None, use_cache: bool = True):
     """Run the shared front of the pipeline: ingest then parse.
@@ -108,6 +128,7 @@ def ingest_and_parse(source: str, language: str | None,
         native_source_root = None
 
     repo = ingest(source, language=language, source_root=native_source_root)
+    repo.name = _friendly_name(source, repo.name)
     print(f"      {len(repo.source_files)} source files | "
           f"language={repo.language} | version={repo.version}", flush=True)
     if not repo.source_files:
@@ -119,3 +140,33 @@ def ingest_and_parse(source: str, language: str | None,
     if graph.num_entities == 0:
         sys.exit("[arcade-analyze] No entities extracted. Nothing to recover.")
     return repo, graph
+
+
+def recover_bundle(source: str, language: str | None, source_root: str | None = None,
+                   algorithm: str = "pkg", num_clusters: int | None = None,
+                   use_llm: bool = False, use_cache: bool = True):
+    """Run the full read path: ingest -> parse -> recover -> smells -> metrics.
+
+    Returns a dict bundle with repo, graph, arch, smells, metrics. This is the
+    common front-end for the architect-output scripts (summary, dsm, c4,
+    refactor, validate, ...) so they don't each re-implement the pipeline.
+    """
+    from arcade_agent.tools.compute_metrics import compute_metrics
+    from arcade_agent.tools.detect_smells import detect_smells
+    from arcade_agent.tools.recover import recover
+
+    repo, graph = ingest_and_parse(source, language, source_root, use_cache=use_cache)
+    print(f"      recovering ({algorithm}) ...", flush=True)
+    kwargs = {"num_clusters": num_clusters} if num_clusters is not None else {}
+    arch = recover(graph, algorithm=algorithm, **kwargs)
+    smells = detect_smells(arch, graph, use_llm=use_llm)
+    metrics = compute_metrics(arch, graph)
+    print(f"      {len(arch.components)} components, {len(smells)} smells", flush=True)
+    return {"repo": repo, "graph": graph, "arch": arch,
+            "smells": smells, "metrics": metrics}
+
+
+def smell_name(smell) -> str:
+    """Human-readable smell type. smell_type is a str-Enum whose .value is the
+    clean label ('Dependency Cycle'); str(enum) gives 'SmellType.DEPENDENCY_CYCLE'."""
+    return str(getattr(smell.smell_type, "value", smell.smell_type))

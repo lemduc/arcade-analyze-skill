@@ -146,6 +146,34 @@ markdown.
 "$ARCADE_AGENT_HOME/.venv/bin/python" scripts/query.py ask <source> most_coupled
 ```
 
+### 5–10. Architect deliverables
+
+```bash
+# Executive summary: health score + findings + recommended actions
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/summary_report.py <source> -l java -o summary.md
+
+# Design Structure Matrix (scales past Mermaid; cycles in red)
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/dsm.py <source> -l java
+
+# C4-PlantUML + Structurizr DSL export
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/export_c4.py <source> -l java -o out/
+
+# Ranked refactoring roadmap (quick wins vs big bets)
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/refactor_plan.py <source> -l java -o plan.md
+
+# Rule + layered-architecture validation (exits 1 on violation → CI gate)
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/validate.py <source> -l java --rules .arcade-rules.json
+
+# Multi-module / microservices system view
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/analyze_system.py <modA> <modB> <modC> -l java
+```
+
+**Enforcing architecture in CI:** define rules in `.arcade-rules.json` (see
+[`assets/arcade-rules.sample.json`](assets/arcade-rules.sample.json)) and copy
+[`assets/arch-gate.yml`](assets/arch-gate.yml) into your repo's
+`.github/workflows/`. The gate fails the PR on cycles, forbidden dependencies,
+metric floors, oversized components, or bottlenecks.
+
 See [`references/algorithms.md`](references/algorithms.md) for algorithm, smell,
 and metric details, and [`ROADMAP.md`](ROADMAP.md) for what's planned next.
 
@@ -155,11 +183,18 @@ and metric details, and [`ROADMAP.md`](ROADMAP.md) for what's planned next.
 arcade-analyze-skill/
 ├── SKILL.md                      # skill definition + how to drive each workflow
 ├── scripts/
-│   ├── _common.py                # shared: home resolution, ingest+parse, summary
+│   ├── _common.py                # shared: home resolution, ingest+parse+recover, summary
 │   ├── analyze.py                # 1. single-run pipeline → HTML report
 │   ├── compare_algorithms.py     # 2. side-by-side algorithm comparison
-│   ├── diff_versions.py          # 3. architectural drift across git refs
-│   └── query.py                  # 4. Q&A: summarize / explain / find / ask
+│   ├── diff_versions.py          # 3. architectural drift across git refs (+ CI gate)
+│   ├── query.py                  # 4. Q&A: summarize / explain / find / ask
+│   ├── summary_report.py         # 5. executive summary: health score + findings
+│   ├── dsm.py                    # 6. Design Structure Matrix view
+│   ├── export_c4.py              # 7. C4-PlantUML + Structurizr DSL export
+│   ├── refactor_plan.py          # 8. ranked refactoring roadmap
+│   ├── validate.py               # 9. rule + layered-architecture validation
+│   └── analyze_system.py         # 10. multi-module / microservices view
+├── assets/                       # .arcade-rules sample + CI gate workflow
 ├── examples/                     # committed demo reports + run_demo.sh
 ├── references/algorithms.md      # algorithm / smell / metric reference
 └── ROADMAP.md                    # roadmap toward a full architect tool

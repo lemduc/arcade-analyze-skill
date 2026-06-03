@@ -1,0 +1,53 @@
+# Architecture gate — like SonarQube, but for architecture.
+#
+# Copy this to .github/workflows/arch-gate.yml in your repo. It recovers the
+# architecture on every PR and fails the check if your .arcade-rules.json is
+# violated (cycles, forbidden dependencies, metric floors, oversized components,
+# bottlenecks). Add a .arcade-rules.json to your repo root first — see
+# arcade-rules.sample.json.
+#
+# Assumes arcade-agent is pip-installable (or vendored). Adjust the install step
+# and the SKILL_DIR/source path to your setup.
+
+name: Architecture gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  arch-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install arcade-agent
+        run: |
+          python -m pip install --upgrade pip
+          # Replace with your install method, e.g.:
+          #   pip install arcade-agent
+          # or, against a checkout:
+          #   pip install -e /path/to/arcade-agent
+          pip install git+https://github.com/lemduc/arcade-agent.git
+
+      - name: Check out the arcade-analyze skill (for the validate script)
+        uses: actions/checkout@v4
+        with:
+          repository: lemduc/arcade-analyze-skill
+          path: .arcade-skill
+
+      - name: Validate architecture against rules
+        env:
+          # arcade-agent is installed into the job's python, so point the script
+          # at that environment's site-packages parent. With a pip install the
+          # editable-src trick isn't needed; pass --arcade-home only if you
+          # vendored a checkout.
+          ARCADE_AGENT_HOME: ${{ github.workspace }}/arcade-agent
+        run: |
+          python .arcade-skill/scripts/validate.py "${{ github.workspace }}" \
+            --rules "${{ github.workspace }}/.arcade-rules.json" \
+            --fail-on error

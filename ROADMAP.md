@@ -3,9 +3,13 @@
 This roadmap tracks what needs to be built to turn `arcade-analyze` into a daily
 tool for professional software architects — not just a proof-of-concept CLI.
 
-**Phase 1 is complete** (see below): the skill now covers single-run analysis,
-algorithm comparison, version drift, and architecture Q&A — plus remote git URLs.
-Phases 2–5 below are what's left to make it a full day-to-day architect tool.
+**Phases 1, 2, and 3 are complete, plus multi-module (4d)** — see below. The
+skill now does single-run analysis, algorithm comparison, version drift, Q&A,
+remote repos, executive summaries with a health score, DSM views, C4/Structurizr
+export, refactoring roadmaps, rule + layered-architecture validation (with a CI
+gate), and multi-module system views. What's left: the deeper arcade-agent core
+work in Phase 4 (TypeScript/Go parsers, incremental parsing) and the Phase 5
+collaboration features.
 
 Each phase below adds a meaningful capability. Items are marked as:
 - `[arcade-agent]` — needs new or extended code in the tool library
@@ -25,15 +29,16 @@ Each phase below adds a meaningful capability. Items are marked as:
 | Architecture drift across git versions | ✅ done (`scripts/diff_versions.py`) |
 | Remote git URL analysis | ✅ done (all scripts accept a git URL as `<source>`) |
 | Natural-language Q&A about the architecture | ✅ done (`scripts/query.py`: summarize/explain/find/ask) |
-| C4 model export (Context / Container / Component) | ❌ not started |
-| Layer / pattern validation (hexagonal, clean arch) | ❌ not started |
-| Custom architectural rule checking | ❌ not started |
-| Stakeholder / executive-grade report | ❌ not started |
-| Architecture Decision Record (ADR) generation | ❌ not started |
-| TypeScript / JavaScript support | stub only in arcade-agent |
-| Multi-module / microservices system view | ❌ not started |
-| Refactoring priority roadmap | ❌ not started |
-| CI/CD architecture drift gate | `scripts/arch_diff.py` exists — not packaged as reusable action |
+| C4 model export (Context / Container / Component) | ✅ done (`scripts/export_c4.py`: C4-PlantUML + Structurizr) |
+| Layer / pattern validation (hexagonal, clean arch) | ✅ done (`scripts/validate.py` layered check) |
+| Custom architectural rule checking | ✅ done (`scripts/validate.py` + `.arcade-rules.json`) |
+| Stakeholder / executive-grade report | ✅ done (`scripts/summary_report.py`: health score + narrative) |
+| Refactoring priority roadmap | ✅ done (`scripts/refactor_plan.py`) |
+| Multi-module / microservices system view | ✅ done (`scripts/analyze_system.py`) |
+| CI/CD architecture drift gate | ✅ done (`assets/arch-gate.yml` + `validate`/`diff` exit codes) |
+| Architecture Decision Record (ADR) generation | ❌ Phase 5 |
+| TypeScript / JavaScript support | ⏳ Phase 4a — arcade-agent core (stub today) |
+| Go support | ⏳ Phase 4b — arcade-agent core |
 
 ---
 
@@ -89,11 +94,19 @@ don't have locally — vendor libraries, acquired codebases, dependencies.
 
 ---
 
-## Phase 2 — Architect-grade output
+## Phase 2 — Architect-grade output ✅ DONE
 
-**Theme:** the current HTML report is a developer dashboard. Architects need
-output they can walk into a room with — slides-ready summaries, layered
-visualisations, and actionable remediation priorities.
+**Shipped at the skill layer** (consuming the recovered architecture, no
+arcade-agent core changes needed): `summary_report.py` (2a — health score 0–100,
+plain-English findings, recommended actions), `dsm.py` (2b — Design Structure
+Matrix HTML with cyclic cells highlighted), `export_c4.py` (2c — C4-PlantUML +
+Structurizr DSL), `refactor_plan.py` (2d — severity × blast-radius roadmap,
+quick wins vs big bets). Verified on arcade_core: health 0/100 (grade F), DSM
+flags the cyclic pairs, C4 emits 13 components / 36 relationships.
+
+**Theme:** the HTML report is a developer dashboard. Architects need output they
+can walk into a room with — slides-ready summaries, layered visualisations, and
+actionable remediation priorities.
 
 **Effort:** ~3–4 weeks.
 
@@ -135,11 +148,18 @@ This is the most direct answer to "what should I do about this?"
 
 ---
 
-## Phase 3 — Validation and rules
+## Phase 3 — Validation and rules ✅ DONE
+
+**Shipped:** `validate.py` reads `.arcade-rules.json` (3a — forbidden-dependency,
+no-cycles, metric-gate, max-fan-in, max-component-size) and runs a
+layered/clean-architecture heuristic (3b — maps components to layers, flags
+upward dependencies); it exits non-zero on violations. CI gate (3c):
+`assets/arch-gate.yml` GitHub Action + `assets/arcade-rules.sample.json`, plus
+`diff_versions.py --min-similarity / --max-new-smells`. Verified on arcade_core:
+4 rule violations correctly flagged, exit code 1.
 
 **Theme:** architects don't just observe architecture — they specify it and
-check conformance. This phase lets them encode their rules and run them as a
-validation gate.
+check conformance.
 
 **Effort:** ~3–4 weeks.
 
@@ -208,7 +228,14 @@ working interactively on large repos need sub-second re-analysis on changed file
 Implement a file-level incremental parser that re-parses only changed files and
 merges the delta into the cached graph.
 
-### 4d. Multi-module / microservices view `[arcade-agent + skill]`
+### 4d. Multi-module / microservices view `[skill]` ✅ DONE
+Shipped as `scripts/analyze_system.py`: analyzes several module/service roots,
+prints a per-module health table, and recovers the system-level dependency graph
+(modules as nodes) by resolving cross-module imports — surfacing the hub module
+and any inter-module cycles. Verified across arcade-agent's tools/algorithms/
+parsers packages (tools→algorithms→parsers, parsers is the hub, no cycles).
+
+#### Original note — 4d. Multi-module / microservices view `[arcade-agent + skill]`
 Architects increasingly analyse systems of services rather than monoliths. Add:
 - Multi-root `ingest` (list of repos/directories)
 - Cross-module dependency tracking (via API surface matching or shared contract
@@ -255,19 +282,20 @@ codebases.
 
 | Phase | Items | Unlock |
 |-------|-------|--------|
-| ✅ **Done** (Phase 1) | 1a–1d | Surfaced existing arcade-agent tools — comparison, drift, Q&A, remote repos |
-| **Now** (Phase 2a–2b) | Stakeholder summary, DSM view | Makes output presentable beyond the team |
-| **Next** (Phase 3a–3b) | Rules, layered detection | Moves from observe to validate |
-| **Then** (Phase 2c–2d) | C4 export, refactoring roadmap | Full architect deliverable set |
-| **Then** (Phase 3c) | Packaged CI drift gate | Operationalises findings |
-| **Later** (Phase 4) | TS, Go, incremental, multi-module | Breadth for real-world systems |
+| ✅ **Done** (Phase 1) | 1a–1d | Comparison, drift, Q&A, remote repos |
+| ✅ **Done** (Phase 2) | 2a–2d | Stakeholder summary, DSM, C4 export, refactoring roadmap |
+| ✅ **Done** (Phase 3) | 3a–3c | Rules, layered detection, CI gate |
+| ✅ **Done** (Phase 4d) | 4d | Multi-module / microservices view |
+| **Now** (Phase 4a–4c) | TS parser, Go parser, incremental | arcade-agent **core** work — new parsers + deps |
 | **Later** (Phase 5) | Hosting, ADRs, trends, VS Code | Team-scale collaboration |
 
-The critical path to "genuinely useful for a software architect" runs through
-**Phase 1** (unlock existing tools) and **Phase 2a + 2b** (output they can
-present). Everything else expands the scope of what's analysable or how it's
-shared. An architect with Phase 1–2 coverage can do meaningful work; without
-them they have a demo.
+Phases 1–3 plus 4d are the "genuinely useful for a software architect" core, and
+all of it lives at the skill layer (riding on arcade-agent's existing parse +
+recover + smells + metrics). The remaining Phase 4 items (4a–4c) are genuine
+arcade-agent **core** efforts: each new language parser is a tree-sitter
+integration in the library (a new dependency + a parser module modelled on
+`parsers/python.py`), and incremental parsing is cache surgery. They benefit
+every consumer of arcade-agent, not just this skill, so they belong upstream.
 
 ---
 

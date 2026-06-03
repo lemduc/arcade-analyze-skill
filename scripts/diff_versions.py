@@ -174,6 +174,10 @@ def main() -> None:
                    help="Sub-path to treat as the source root (e.g. src/main/java).")
     p.add_argument("--output", "-o", default=None,
                    help="Write the markdown drift report to this path (also printed to stdout).")
+    p.add_argument("--min-similarity", type=float, default=None,
+                   help="Gate: exit 1 if A2A similarity drops below this (e.g. 0.7).")
+    p.add_argument("--max-new-smells", type=int, default=None,
+                   help="Gate: exit 1 if more than this many new smells appear in --to.")
     args = p.parse_args()
 
     repo_path = Path(args.repo).expanduser().resolve()
@@ -232,6 +236,20 @@ def main() -> None:
             "fixed_smells": [{"type": _smell_name(s),
                               "affected": s.affected_components} for s in fixed_smells],
         })
+
+        # CI gate: fail if drift exceeds thresholds.
+        gate_failures = []
+        if args.min_similarity is not None and drift["overall_similarity"] < args.min_similarity:
+            gate_failures.append(
+                f"A2A similarity {drift['overall_similarity']:.2f} < min {args.min_similarity}")
+        if args.max_new_smells is not None and len(new_smells) > args.max_new_smells:
+            gate_failures.append(
+                f"{len(new_smells)} new smell(s) > max {args.max_new_smells}")
+        if gate_failures:
+            print("\n❌ Drift gate failed:", file=sys.stderr)
+            for f in gate_failures:
+                print(f"  - {f}", file=sys.stderr)
+            sys.exit(1)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 

@@ -188,6 +188,51 @@ codebase don't re-parse — it's cheap to run several sub-commands in a row.
 
 ---
 
+## Architect workflows (5–10)
+
+These produce architect-grade deliverables. All take `<source>` + `--language`
+(and most `--algorithm`, `--source-root`); all print the summary JSON block.
+
+| # | Script | Produces | Reach for it when |
+|---|--------|----------|-------------------|
+| 5 | `summary_report.py` | Executive markdown: health score (0–100 + grade), top findings in plain English, recommended actions | The architect needs something to present — a review, a status doc, a non-technical audience |
+| 6 | `dsm.py` | Design Structure Matrix HTML (cyclic cells in red) | The system has many components (>~10) and a Mermaid diagram is unreadable |
+| 7 | `export_c4.py` | C4-PlantUML `.puml` + Structurizr `.dsl` | They want the architecture in their documentation toolchain |
+| 8 | `refactor_plan.py` | Ranked refactoring roadmap (severity × blast radius), quick wins vs big bets | "What should I actually do about these smells?" |
+| 9 | `validate.py` | Rule conformance + layered-architecture check; **exits 1 on violations** | They have architectural rules to enforce, or want a CI gate |
+| 10 | `analyze_system.py` | Multi-module/microservices view: per-module health + system dependency graph | The target is several modules/services, not one codebase |
+
+```bash
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/summary_report.py"  <source> -l java -o summary.md
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/dsm.py"             <source> -l java
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/export_c4.py"       <source> -l java -o out/
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/refactor_plan.py"   <source> -l java -o plan.md
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/validate.py"        <source> -l java --rules .arcade-rules.json
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/analyze_system.py"  <moduleA> <moduleB> <moduleC> -l java
+```
+
+**Rules & CI:** `validate.py` reads `.arcade-rules.json` (sample in
+`assets/arcade-rules.sample.json`; YAML works if PyYAML is installed). Rule types:
+`forbidden-dependency`, `no-cycles`, `metric-gate`, `max-fan-in`,
+`max-component-size`. For a PR gate, copy `assets/arch-gate.yml` to the target
+repo, or use `diff_versions.py --min-similarity / --max-new-smells` (both exit 1
+when breached).
+
+**Mapping requests to these workflows:**
+- "executive summary / health / how healthy / present to leadership" → `summary_report.py`
+- "dependency matrix / too many components to diagram / show the tangle" → `dsm.py`
+- "C4 / PlantUML / Structurizr / put it in our docs" → `export_c4.py`
+- "what should I fix / refactoring plan / prioritize the debt" → `refactor_plan.py`
+- "enforce rules / no cycles allowed / fail CI if / conformance / is it layered" → `validate.py`
+- "whole system / these microservices / multiple repos / cross-module deps" → `analyze_system.py`
+
+**Language support:** Java, Python, C/C++ are fully supported. TypeScript/JS and
+Go support depend on the arcade-agent version (see `ROADMAP.md` Phase 4) — check
+`<arcade-home>/src/arcade_agent/parsers/` or just try with `--language` and read
+the error.
+
+---
+
 ## Interpreting the output for the user
 
 - **Components** — the recovered modules and how many entities each holds. Very
