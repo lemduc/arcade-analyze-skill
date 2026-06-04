@@ -48,6 +48,27 @@ Two design rules fall out of "in the agent's loop":
 | Enforcement | **Tiered** | Advisory while developing (the agent queries + self-corrects); hard-blocking at commit/CI. |
 | Architecture intent | **Author-defined spec** | A reviewed `architecture.spec.json` in the repo is the source of truth, written up front (optionally LLM-assisted) and evolved deliberately. |
 
+## Implementation status (v0.1 — shipped)
+
+The usable core is built and tested in this repo:
+
+| Phase | Status | What shipped |
+|-------|--------|--------------|
+| 1. Architecture contract | ✅ done | `scripts/_spec.py` (deterministic conformance engine) + `guard.py init` templates (hexagonal/layered/clean/mvc) + `assets/architecture.spec.sample.json` |
+| 2. Guardrail tools | ✅ done | `scripts/guard.py` CLI (check/propose/preview/explain/remediate) **and** `scripts/guard_mcp.py` — a real MCP server exposing `check_architecture`, `propose_placement`, `preview_impact`, `explain_violation`, `remediate` |
+| 4. Tiered enforcement | ✅ done | advisory (MCP + `assets/guard-claude-hook.md` PostToolUse hook) → blocking (`assets/guard-pre-commit.sh`, `assets/guard-ci.yml`; `guard check --fail-on error` exits ≠0) |
+| 5. Remediation | ✅ done (v1) | `remediate` returns ranked fixes (errors first) per violation; LLM/patch-level remediation is the next increment |
+| 3. Incremental parsing | ⏳ open | uses arcade-agent's existing whole-graph mtime cache (re-run on unchanged code is cheap); true file-level incremental merge is the remaining core work |
+| 6. Evaluation harness | ⏳ open | with/without-guardrail benchmark not yet built |
+| 7. Productization | ⏳ open | pip/MCP one-liner, VS Code, dashboard — future |
+
+Verified on `arcade_core`: with a 5-component spec the guardrail returns **FAIL**
+(forbidden dependency, 3 layer violations, a 5-component cyclic group, metric
+budget) with a fix per finding; `propose_placement("redis cache for clustering")`
+→ component `clustering` (may depend on `domain`); `preview_impact(visualization
+→ clustering)` → **would violate**. Conformance is deterministic and gate-able
+(exit 1 on FAIL).
+
 ## System shape
 
 ```

@@ -1,0 +1,41 @@
+# arcade-guard CI gate (blocking tier) — fails the PR if the code violates the
+# architecture contract in architecture.spec.json.
+#
+# Copy to .github/workflows/arch-guard.yml. Add an architecture.spec.json to your
+# repo root first (or run guard.py init).
+
+name: Architecture guard
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install arcade-agent
+        run: |
+          python -m pip install --upgrade pip
+          pip install "git+https://github.com/lemduc/arcade-agent.git#egg=arcade-agent[languages]"
+
+      - name: Check out the arcade-analyze skill
+        uses: actions/checkout@v4
+        with:
+          repository: lemduc/arcade-analyze-skill
+          path: .arcade-skill
+
+      - name: Enforce the architecture contract
+        env:
+          ARCADE_AGENT_HOME: ${{ github.workspace }}/arcade-agent
+        run: |
+          # arcade-agent is pip-installed into the job python; point guard at it.
+          python .arcade-skill/scripts/guard.py check "${{ github.workspace }}" \
+            --spec "${{ github.workspace }}/architecture.spec.json" \
+            --fail-on error

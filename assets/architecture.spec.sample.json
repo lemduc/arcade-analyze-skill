@@ -1,0 +1,27 @@
+{
+  "$comment": "Architecture contract for arcade-guard. Copy to your repo root as architecture.spec.json (or run `guard.py init --template hexagonal`) and edit the `match` globs to fit your layout. Conformance is checked deterministically from these globs + the dependency edges. 'from'/'to' match a component name OR a layer name.",
+  "intent": "Hexagonal/ports-and-adapters: the domain core is pure; adapters and UI depend inward toward the domain, never the reverse.",
+  "components": [
+    { "name": "domain",      "match": "**/domain/**",      "layer": "domain" },
+    { "name": "application", "match": "**/application/**", "layer": "application" },
+    { "name": "adapters",    "match": "**/adapters/**",    "layer": "infrastructure" },
+    { "name": "api",         "match": "**/api/**",         "layer": "presentation" }
+  ],
+  "layers": ["presentation", "application", "domain", "infrastructure"],
+  "allow": [
+    { "from": "presentation",   "to": "application" },
+    { "from": "application",    "to": "domain" },
+    { "from": "infrastructure", "to": "domain" }
+  ],
+  "forbid": [
+    { "from": "presentation", "to": "infrastructure", "why": "UI must not reach adapters/persistence directly" }
+  ],
+  "budgets": {
+    "no_cycles": true,
+    "max_new_smells": 0,
+    "min_turbomq": 0.4,
+    "max_component_entities": 200,
+    "max_fan_in": 8
+  },
+  "evolution": { "requires_review": true }
+}

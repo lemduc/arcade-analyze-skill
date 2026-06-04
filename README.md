@@ -193,6 +193,44 @@ from a CDN).
 `.github/workflows/`. The gate fails the PR on cycles, forbidden dependencies,
 metric floors, oversized components, or bottlenecks.
 
+## Architecture guardrail (arcade-guard)
+
+Keep an AI agent (or a human) aligned to an **intended** architecture *while
+building*, not just analyzing after the fact. You define the intended
+architecture once in `architecture.spec.json` (components by path glob, layers,
+allowed/forbidden dependencies, decay budgets); the guardrail enforces it
+deterministically. See [`GUARDRAIL_PLAN.md`](GUARDRAIL_PLAN.md) for the full
+design and status.
+
+```bash
+# Scaffold a contract (templates: hexagonal | layered | clean | mvc)
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/guard.py init --template hexagonal
+
+# PROACTIVE: where should a new thing live, and what may it depend on?
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/guard.py propose . --intent "add a Redis cache client"
+
+# Before adding a cross-component dependency
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/guard.py preview . --from api --to store
+
+# After a change — verdict + fixes; exits 1 on FAIL (pre-commit / CI gate)
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/guard.py check . --fail-on error
+```
+
+Or run it as an **MCP server** so any agent can call it as tools
+(`check_architecture`, `propose_placement`, `preview_impact`, `explain_violation`,
+`remediate`):
+
+```bash
+ARCADE_AGENT_HOME=/path/to/arcade-agent \
+  /path/to/arcade-agent/.venv/bin/python scripts/guard_mcp.py
+```
+
+**Tiered enforcement:** advisory in the agent's loop (MCP tools +
+[`assets/guard-claude-hook.md`](assets/guard-claude-hook.md)) and blocking at the
+boundary ([`assets/guard-pre-commit.sh`](assets/guard-pre-commit.sh),
+[`assets/guard-ci.yml`](assets/guard-ci.yml)). Sample contract:
+[`assets/architecture.spec.sample.json`](assets/architecture.spec.sample.json).
+
 See [`references/algorithms.md`](references/algorithms.md) for algorithm, smell,
 and metric details, and [`ROADMAP.md`](ROADMAP.md) for what's planned next.
 
@@ -213,10 +251,14 @@ arcade-analyze-skill/
 │   ├── refactor_plan.py          # 8. ranked refactoring roadmap
 │   ├── validate.py               # 9. rule + layered-architecture validation
 │   ├── analyze_system.py         # 10. multi-module / microservices view
-│   └── interactive_report.py     # 11. explorable HTML report (click to drill in)
-├── assets/                       # .arcade-rules sample + CI gate workflow
+│   ├── interactive_report.py     # 11. explorable HTML report (click to drill in)
+│   ├── _spec.py                  # arcade-guard: architecture-contract engine
+│   ├── guard.py                  # arcade-guard CLI (init/check/propose/preview/...)
+│   └── guard_mcp.py              # arcade-guard MCP server (agent-callable tools)
+├── assets/                       # rules + CI gates + guard spec/hooks/templates
 ├── examples/                     # committed demo reports + run_demo.sh
 ├── references/algorithms.md      # algorithm / smell / metric reference
+├── GUARDRAIL_PLAN.md             # arcade-guard design + implementation status
 └── ROADMAP.md                    # roadmap toward a full architect tool
 ```
 
