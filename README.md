@@ -105,12 +105,17 @@ component". The skill picks the right workflow below.
 Each workflow is a script run with arcade-agent's venv interpreter. `<source>`
 is a local directory **or a git URL** (cloned for you).
 
-### 1. Analyze — one codebase → interactive HTML report
+### 1. Analyze — one codebase → static HTML report (the default)
 
 ```bash
 "$ARCADE_AGENT_HOME/.venv/bin/python" scripts/analyze.py <source> \
   --language java --algorithm pkg
 ```
+
+This is the **default report**: a self-contained static HTML page (component
+diagram, smells, metrics). For an *explorable* version of the same analysis —
+click a component to drill in — use the optional **interactive report (#11)**;
+it's an alternative, not a replacement.
 
 Options: `--language/-l`, `--algorithm/-a` (`pkg` default, `wca`/`acdc`/`arc`/`limbo`),
 `--num-clusters/-n`, `--source-root` (e.g. `src/main/java`), `--use-llm`,
@@ -172,13 +177,15 @@ markdown.
 "$ARCADE_AGENT_HOME/.venv/bin/python" scripts/interactive_report.py <source> -l java
 ```
 
-The **interactive report** (`interactive_report.py`) is the explorable
-counterpart to `analyze.py`'s static report: click a component in the diagram
-(or its chip) and a side panel drills into that component — its entities,
-what it depends on / what depends on it, cohesion, API surface, and the smells
-that touch it. Dependency chips are themselves clickable, so you walk the graph
-instead of scrolling a page. Everything is embedded in one self-contained HTML
-file (only Mermaid loads from a CDN).
+The **interactive report** (`interactive_report.py`) is an **optional**
+explorable alternative to the default static report from `analyze.py` — the
+static report stays the default; reach for this one when you want to *explore*
+rather than read. Click a component in the diagram (or its chip) and a side
+panel drills into that component — its entities, what it depends on / what
+depends on it, cohesion, API surface, and the smells that touch it. Dependency
+chips are themselves clickable, so you walk the graph instead of scrolling a
+page. Everything is embedded in one self-contained HTML file (only Mermaid loads
+from a CDN).
 
 **Enforcing architecture in CI:** define rules in `.arcade-rules.json` (see
 [`assets/arcade-rules.sample.json`](assets/arcade-rules.sample.json)) and copy
