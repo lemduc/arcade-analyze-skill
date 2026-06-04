@@ -201,9 +201,11 @@ These produce architect-grade deliverables. All take `<source>` + `--language`
 | 8 | `refactor_plan.py` | Ranked refactoring roadmap (severity × blast radius), quick wins vs big bets | "What should I actually do about these smells?" |
 | 9 | `validate.py` | Rule conformance + layered-architecture check; **exits 1 on violations** | They have architectural rules to enforce, or want a CI gate |
 | 10 | `analyze_system.py` | Multi-module/microservices view: per-module health + system dependency graph | The target is several modules/services, not one codebase |
+| 11 | `interactive_report.py` | **Explorable** HTML report: click a component (diagram node or chip) → side panel drills into its entities, dependencies, cohesion, API surface, and smells; dependency chips are clickable to walk the graph | They want to *explore* the architecture, not read a static report — the richer alternative to `analyze.py` |
 
 ```bash
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/summary_report.py"  <source> -l java -o summary.md
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/interactive_report.py" <source> -l java
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/dsm.py"             <source> -l java
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/export_c4.py"       <source> -l java -o out/
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/refactor_plan.py"   <source> -l java -o plan.md
@@ -225,6 +227,7 @@ when breached).
 - "what should I fix / refactoring plan / prioritize the debt" → `refactor_plan.py`
 - "enforce rules / no cycles allowed / fail CI if / conformance / is it layered" → `validate.py`
 - "whole system / these microservices / multiple repos / cross-module deps" → `analyze_system.py`
+- "explore / interactive / clickable / let me drill into components / explorable report" → `interactive_report.py`
 
 **Language support:** Java, Python, C/C++, **TypeScript/JavaScript** (`.ts/.tsx/
 .js/.jsx`), and **Go** are supported (`--language typescript` / `go`). TypeScript

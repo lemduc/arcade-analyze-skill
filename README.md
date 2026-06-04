@@ -167,7 +167,18 @@ markdown.
 
 # Multi-module / microservices system view
 "$ARCADE_AGENT_HOME/.venv/bin/python" scripts/analyze_system.py <modA> <modB> <modC> -l java
+
+# Interactive, explorable report — click a component to drill in
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/interactive_report.py <source> -l java
 ```
+
+The **interactive report** (`interactive_report.py`) is the explorable
+counterpart to `analyze.py`'s static report: click a component in the diagram
+(or its chip) and a side panel drills into that component — its entities,
+what it depends on / what depends on it, cohesion, API surface, and the smells
+that touch it. Dependency chips are themselves clickable, so you walk the graph
+instead of scrolling a page. Everything is embedded in one self-contained HTML
+file (only Mermaid loads from a CDN).
 
 **Enforcing architecture in CI:** define rules in `.arcade-rules.json` (see
 [`assets/arcade-rules.sample.json`](assets/arcade-rules.sample.json)) and copy
@@ -194,7 +205,8 @@ arcade-analyze-skill/
 │   ├── export_c4.py              # 7. C4-PlantUML + Structurizr DSL export
 │   ├── refactor_plan.py          # 8. ranked refactoring roadmap
 │   ├── validate.py               # 9. rule + layered-architecture validation
-│   └── analyze_system.py         # 10. multi-module / microservices view
+│   ├── analyze_system.py         # 10. multi-module / microservices view
+│   └── interactive_report.py     # 11. explorable HTML report (click to drill in)
 ├── assets/                       # .arcade-rules sample + CI gate workflow
 ├── examples/                     # committed demo reports + run_demo.sh
 ├── references/algorithms.md      # algorithm / smell / metric reference
