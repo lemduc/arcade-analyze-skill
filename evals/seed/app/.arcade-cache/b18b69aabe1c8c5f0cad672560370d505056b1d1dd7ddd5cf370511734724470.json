@@ -1,0 +1,228 @@
+{
+  "entities": {
+    "api.orders_api.OrdersApi": {
+      "fqn": "api.orders_api.OrdersApi",
+      "name": "OrdersApi",
+      "package": "api",
+      "file_path": "api/orders_api.py",
+      "kind": "class",
+      "language": "python",
+      "imports": [
+        "app.service.orders_service"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {}
+    },
+    "api.orders_api.OrdersApi.__init__": {
+      "fqn": "api.orders_api.OrdersApi.__init__",
+      "name": "__init__",
+      "package": "api",
+      "file_path": "api/orders_api.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.service.orders_service"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "api.orders_api.OrdersApi"
+      }
+    },
+    "api.orders_api.OrdersApi.get_user_orders": {
+      "fqn": "api.orders_api.OrdersApi.get_user_orders",
+      "name": "get_user_orders",
+      "package": "api",
+      "file_path": "api/orders_api.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.service.orders_service"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "api.orders_api.OrdersApi"
+      }
+    },
+    "domain.order.Order": {
+      "fqn": "domain.order.Order",
+      "name": "Order",
+      "package": "domain",
+      "file_path": "domain/order.py",
+      "kind": "class",
+      "language": "python",
+      "imports": [
+        "dataclasses"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {}
+    },
+    "service.orders_service.OrdersService": {
+      "fqn": "service.orders_service.OrdersService",
+      "name": "OrdersService",
+      "package": "service",
+      "file_path": "service/orders_service.py",
+      "kind": "class",
+      "language": "python",
+      "imports": [
+        "app.domain.order",
+        "app.store.orders_repo"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {}
+    },
+    "service.orders_service.OrdersService.__init__": {
+      "fqn": "service.orders_service.OrdersService.__init__",
+      "name": "__init__",
+      "package": "service",
+      "file_path": "service/orders_service.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.domain.order",
+        "app.store.orders_repo"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "service.orders_service.OrdersService"
+      }
+    },
+    "service.orders_service.OrdersService.list_for_user": {
+      "fqn": "service.orders_service.OrdersService.list_for_user",
+      "name": "list_for_user",
+      "package": "service",
+      "file_path": "service/orders_service.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.domain.order",
+        "app.store.orders_repo"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "service.orders_service.OrdersService"
+      }
+    },
+    "store.orders_repo.OrdersRepo": {
+      "fqn": "store.orders_repo.OrdersRepo",
+      "name": "OrdersRepo",
+      "package": "store",
+      "file_path": "store/orders_repo.py",
+      "kind": "class",
+      "language": "python",
+      "imports": [
+        "app.domain.order"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {}
+    },
+    "store.orders_repo.OrdersRepo.__init__": {
+      "fqn": "store.orders_repo.OrdersRepo.__init__",
+      "name": "__init__",
+      "package": "store",
+      "file_path": "store/orders_repo.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.domain.order"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "store.orders_repo.OrdersRepo"
+      }
+    },
+    "store.orders_repo.OrdersRepo.list_orders": {
+      "fqn": "store.orders_repo.OrdersRepo.list_orders",
+      "name": "list_orders",
+      "package": "store",
+      "file_path": "store/orders_repo.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.domain.order"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "store.orders_repo.OrdersRepo"
+      }
+    },
+    "store.orders_repo.OrdersRepo.get": {
+      "fqn": "store.orders_repo.OrdersRepo.get",
+      "name": "get",
+      "package": "store",
+      "file_path": "store/orders_repo.py",
+      "kind": "method",
+      "language": "python",
+      "imports": [
+        "app.domain.order"
+      ],
+      "superclass": null,
+      "interfaces": [],
+      "properties": {
+        "owner": "store.orders_repo.OrdersRepo"
+      }
+    }
+  },
+  "edges": [
+    {
+      "source": "api.orders_api.OrdersApi",
+      "target": "service.orders_service.OrdersService",
+      "relation": "import"
+    },
+    {
+      "source": "api.orders_api.OrdersApi.__init__",
+      "target": "service.orders_service.OrdersService",
+      "relation": "import"
+    },
+    {
+      "source": "service.orders_service.OrdersService",
+      "target": "store.orders_repo.OrdersRepo",
+      "relation": "import"
+    },
+    {
+      "source": "service.orders_service.OrdersService.__init__",
+      "target": "store.orders_repo.OrdersRepo",
+      "relation": "import"
+    },
+    {
+      "source": "store.orders_repo.OrdersRepo",
+      "target": "domain.order.Order",
+      "relation": "import"
+    },
+    {
+      "source": "store.orders_repo.OrdersRepo.__init__",
+      "target": "domain.order.Order",
+      "relation": "import"
+    }
+  ],
+  "packages": {
+    "api": [
+      "api.orders_api.OrdersApi",
+      "api.orders_api.OrdersApi.__init__",
+      "api.orders_api.OrdersApi.get_user_orders"
+    ],
+    "domain": [
+      "domain.order.Order"
+    ],
+    "service": [
+      "service.orders_service.OrdersService",
+      "service.orders_service.OrdersService.__init__",
+      "service.orders_service.OrdersService.list_for_user"
+    ],
+    "store": [
+      "store.orders_repo.OrdersRepo",
+      "store.orders_repo.OrdersRepo.__init__",
+      "store.orders_repo.OrdersRepo.list_orders",
+      "store.orders_repo.OrdersRepo.get"
+    ]
+  }
+}
