@@ -59,7 +59,7 @@ The usable core is built and tested in this repo:
 | 4. Tiered enforcement | ✅ done | advisory (MCP + `assets/guard-claude-hook.md` PostToolUse hook) → blocking (`assets/guard-pre-commit.sh`, `assets/guard-ci.yml`; `guard check --fail-on error` exits ≠0) |
 | 5. Remediation | ✅ done (v1) | `remediate` returns ranked fixes (errors first) per violation; LLM/patch-level remediation is the next increment |
 | 3. Incremental parsing | ⏳ open | uses arcade-agent's existing whole-graph mtime cache (re-run on unchanged code is cheap); true file-level incremental merge is the remaining core work |
-| 6. Evaluation harness | ✅ v1 done | `evals/` — seed + tasks + `score.py`; with-vs-without agent eval (12 runs) + injection/detection eval. Report: `evals/EVAL_REPORT.md`. Finding: agents self-comply on structured code (0 false positives); guardrail catches 3/3 injected violations deterministically. Greenfield eval is the next increment. |
+| 6. Evaluation harness | ✅ done | `evals/` — seed + tasks + `score.py`; 3 experiments in `evals/EVAL_REPORT.md`. (1) Structured codebase, 12 runs: no delta, 0 false positives. (2) Injection: catches 3/3 deterministically. (3) **Greenfield**, 28 runs: no-guardrail violates 21% (`api→store`), guardrail 0%. Net: 0 false positives / 0 false negatives. |
 | 7. Productization | ⏳ open | pip/MCP one-liner, VS Code, dashboard — future |
 
 Verified on `arcade_core`: with a 5-component spec the guardrail returns **FAIL**
