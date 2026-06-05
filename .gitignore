@@ -23,3 +23,6 @@ __pycache__/
 
 # arcade-agent parse cache (generated)
 .arcade-cache/
+
+# bench run outputs
+bench/results/

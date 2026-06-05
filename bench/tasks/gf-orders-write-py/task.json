@@ -1,0 +1,10 @@
+{
+  "id": "gf-orders-write-py",
+  "language": "python",
+  "setting": "greenfield",
+  "style": "layered",
+  "tempts": "presentation->infrastructure: api imports the store directly",
+  "feature": "an `OrdersApi` class in app/api with two methods: `place_order(self, user_id, total)` that creates a new Order, stores it in an in-memory store, and returns the new order's integer id; and `get_order(self, order_id)` that returns the order as {\"id\", \"total\"} or None. Define an `Order` entity (id, user_id, total) in app/domain.",
+  "folder_roles": "Put HTTP-facing code in app/api, business logic in app/service, data access (the in-memory store) in app/store, and entities in app/domain. Use absolute imports like `from app.x.y import Z`.",
+  "rules_summary": "api may depend on service; service may depend on domain and store; api must NOT import store or domain directly."
+}
