@@ -175,6 +175,9 @@ markdown.
 
 # Interactive, explorable report — click a component to drill in
 "$ARCADE_AGENT_HOME/.venv/bin/python" scripts/interactive_report.py <source> -l java
+
+# App-style visualizer — diagram + DSM + failure points + animated flow simulation
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/visualizer.py <source> -l java
 ```
 
 The **interactive report** (`interactive_report.py`) is an **optional**
@@ -186,6 +189,27 @@ depends on it, cohesion, API surface, and the smells that touch it. Dependency
 chips are themselves clickable, so you walk the graph instead of scrolling a
 page. Everything is embedded in one self-contained HTML file (only Mermaid loads
 from a CDN).
+
+The **visualizer** (`visualizer.py`) goes one step further: a dark, app-style
+single-page workbench (fully offline — no CDN) with sidebar views:
+
+- **Architecture** — pan/zoom node-card diagram with a Components (L1) /
+  Detailed (L2) toggle and a click-to-drill side panel;
+- **Dependencies** — weighted dependency list + Design Structure Matrix,
+  cyclic pairs in red;
+- **Failure Points** — smells presented as failure cards: severity, concrete
+  impact, suggested mitigation, estimated effort;
+- **Simulate** — animate a dependency flow hop-by-hop through the graph with a
+  per-hop coupling waterfall; traces are auto-derived (entry flow, hub fan-out,
+  cycle walk) and you can record custom ones by clicking components;
+- **Knowledge** — metrics with plain-English interpretation + smell glossary;
+- **Comments** — a feedback bar whose notes can be copied out as a
+  ready-to-paste prompt for Claude.
+
+A committed demo (no arcade-agent needed) lives at
+[`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html),
+rendered from [`examples/visualizer-demo-model.json`](examples/visualizer-demo-model.json)
+via `visualizer.py --from-model`.
 
 **Enforcing architecture in CI:** define rules in `.arcade-rules.json` (see
 [`assets/arcade-rules.sample.json`](assets/arcade-rules.sample.json)) and copy
@@ -252,6 +276,7 @@ arcade-analyze-skill/
 │   ├── validate.py               # 9. rule + layered-architecture validation
 │   ├── analyze_system.py         # 10. multi-module / microservices view
 │   ├── interactive_report.py     # 11. explorable HTML report (click to drill in)
+│   ├── visualizer.py             # 12. app-style visualizer (diagram/DSM/failures/simulate)
 │   ├── _spec.py                  # arcade-guard: architecture-contract engine
 │   ├── guard.py                  # arcade-guard CLI (init/check/propose/preview/...)
 │   └── guard_mcp.py              # arcade-guard MCP server (agent-callable tools)

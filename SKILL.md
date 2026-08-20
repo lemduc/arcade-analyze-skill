@@ -202,10 +202,12 @@ These produce architect-grade deliverables. All take `<source>` + `--language`
 | 9 | `validate.py` | Rule conformance + layered-architecture check; **exits 1 on violations** | They have architectural rules to enforce, or want a CI gate |
 | 10 | `analyze_system.py` | Multi-module/microservices view: per-module health + system dependency graph | The target is several modules/services, not one codebase |
 | 11 | `interactive_report.py` | **Explorable** HTML report: click a component (diagram node or chip) → side panel drills into its entities, dependencies, cohesion, API surface, and smells; dependency chips are clickable to walk the graph | They want to *explore* the architecture, not read a static report — the richer alternative to `analyze.py` |
+| 12 | `visualizer.py` | **App-style** dark SPA (offline, no CDN): sidebar views — pan/zoom component diagram with L1/L2 detail toggle and drill-down panel, weighted dependency list + DSM, smells presented as *failure-point cards* (severity, impact, mitigation, effort), an **animated dependency-flow simulator** with per-hop waterfall (auto-derived traces + user-recorded ones), metrics knowledge base, and a feedback bar whose notes copy out as a ready-to-paste Claude prompt | They want the full "architecture recovery workbench" experience — demos, walkthroughs, simulating how a change flows through components, or collecting review feedback to send back to Claude |
 
 ```bash
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/summary_report.py"  <source> -l java -o summary.md
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/interactive_report.py" <source> -l java
+"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py"      <source> -l java
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/dsm.py"             <source> -l java
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/export_c4.py"       <source> -l java -o out/
 "$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/refactor_plan.py"   <source> -l java -o plan.md
@@ -228,6 +230,14 @@ when breached).
 - "enforce rules / no cycles allowed / fail CI if / conformance / is it layered" → `validate.py`
 - "whole system / these microservices / multiple repos / cross-module deps" → `analyze_system.py`
 - "explore / interactive / clickable / let me drill into components / explorable report" → `interactive_report.py`
+- "visualizer / dashboard / app-like / simulate a flow / animate the architecture / failure points / demo I can present" → `visualizer.py`
+
+`visualizer.py` extras: `--dump-model model.json` saves the computed model, and
+`--from-model model.json` re-renders it without re-analyzing (works without
+arcade-agent — that is how `examples/arcade-visualizer-demo.html` is built, from
+`examples/visualizer-demo-model.json`). Custom simulation traces and feedback
+notes are stored in the viewer's browser (localStorage); "Copy for Claude" turns
+the collected feedback into a prompt to paste back into a Claude session.
 
 **Language support:** Java, Python, C/C++, **TypeScript/JavaScript** (`.ts/.tsx/
 .js/.jsx`), and **Go** are supported (`--language typescript` / `go`). TypeScript
