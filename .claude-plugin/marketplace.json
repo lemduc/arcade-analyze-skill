@@ -1,0 +1,22 @@
+{
+  "name": "arcade-tools",
+  "owner": {
+    "name": "Duc Le",
+    "url": "https://github.com/lemduc"
+  },
+  "metadata": {
+    "description": "Architecture recovery and analysis tools built on arcade-agent"
+  },
+  "plugins": [
+    {
+      "name": "arcade-analyze",
+      "source": "./",
+      "description": "Recover, visualize, and improve the architecture of a codebase: component recovery (PKG/WCA/ACDC/ARC/LIMBO), architectural smells as failure points, quality metrics with balanced scores, interactive HTML visualizers with a live agent feedback loop, ranked refactoring recommendations, CI gates, and the arcade-guard guardrail.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Duc Le",
+        "url": "https://github.com/lemduc"
+      }
+    }
+  ]
+}

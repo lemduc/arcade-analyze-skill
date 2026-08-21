@@ -1,0 +1,23 @@
+{
+  "name": "arcade-analyze",
+  "displayName": "Arcade Architecture Analysis",
+  "version": "0.1.0",
+  "description": "Recover, visualize, and improve the architecture of a codebase with arcade-agent (the Python ARCADE successor): component recovery, smells, quality metrics, interactive visualizers, refactoring roadmaps, CI gates, and the arcade-guard architecture guardrail.",
+  "author": {
+    "name": "Duc Le",
+    "url": "https://github.com/lemduc"
+  },
+  "homepage": "https://github.com/lemduc/arcade-analyze-skill",
+  "repository": "https://github.com/lemduc/arcade-analyze-skill",
+  "license": "MIT",
+  "keywords": [
+    "architecture",
+    "architecture-recovery",
+    "dependency-analysis",
+    "architectural-smells",
+    "code-quality",
+    "visualization",
+    "refactoring",
+    "arcade"
+  ]
+}
