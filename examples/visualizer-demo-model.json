@@ -1,0 +1,1234 @@
+{
+  "repo": "arcade-agent",
+  "version": "3f9c2ade",
+  "language": "python",
+  "algorithm": "pkg",
+  "num_entities": 186,
+  "num_edges": 402,
+  "metrics": [
+    {
+      "name": "RCI",
+      "value": 0.5,
+      "details": {
+        "intra_edges": 197,
+        "inter_edges": 197,
+        "total_edges": 394
+      }
+    },
+    {
+      "name": "TurboMQ",
+      "value": 5.4927,
+      "details": {
+        "cluster_factors": {
+          "cli": 0.3667,
+          "ingest": 0.4706,
+          "parsers": 0.6731,
+          "graph": 0.3622,
+          "recovery": 0.2667,
+          "clustering": 0.6306,
+          "smells": 0.6061,
+          "metrics": 0.5769,
+          "visualize": 0.5714,
+          "query": 0.6,
+          "utils": 0.3684
+        },
+        "num_components": 11,
+        "raw_sum": 5.4927,
+        "normalized": 0.4993
+      }
+    },
+    {
+      "name": "BasicMQ",
+      "value": 0.4993,
+      "details": {}
+    },
+    {
+      "name": "IntraConnectivity",
+      "value": 0.0713,
+      "details": {
+        "per_component": {
+          "cli": 0.0604,
+          "ingest": 0.0727,
+          "parsers": 0.0353,
+          "graph": 0.0673,
+          "recovery": 0.05,
+          "clustering": 0.0499,
+          "smells": 0.0654,
+          "metrics": 0.1136,
+          "visualize": 0.0762,
+          "query": 0.0962,
+          "utils": 0.0972
+        }
+      }
+    },
+    {
+      "name": "InterConnectivity",
+      "value": 0.118,
+      "details": {
+        "num_connected_pairs": 26
+      }
+    },
+    {
+      "name": "TwoWayPairRatio",
+      "value": 0.0385,
+      "details": {
+        "bidirectional_pairs": 1,
+        "total_pairs": 26
+      }
+    }
+  ],
+  "components": [
+    {
+      "name": "cli",
+      "node_id": "cli",
+      "kind": "module",
+      "responsibility": "Command-line entry points: argument parsing, pipeline orchestration, progress output.",
+      "num_entities": 14,
+      "share": 0.0753,
+      "cohesion": 0.47,
+      "depends_on": [
+        "ingest",
+        "recovery",
+        "visualize",
+        "parsers",
+        "smells",
+        "metrics",
+        "query"
+      ],
+      "depended_on_by": [],
+      "fan_in": 0,
+      "fan_out": 7,
+      "api_surface": [
+        "main",
+        "run_pipeline",
+        "parse_args"
+      ],
+      "entities": [
+        {
+          "name": "main",
+          "kind": "function"
+        },
+        {
+          "name": "run_pipeline",
+          "kind": "function"
+        },
+        {
+          "name": "parse_args",
+          "kind": "class"
+        },
+        {
+          "name": "_cli_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_cli_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_cli_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_cli_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_cli_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 14,
+      "failure_ids": [
+        2
+      ],
+      "cluster_factor": 0.3667,
+      "intra_connectivity": 0.0604
+    },
+    {
+      "name": "ingest",
+      "node_id": "ingest",
+      "kind": "module",
+      "responsibility": "Locates and loads source files from a directory or a freshly cloned git URL; detects the language.",
+      "num_entities": 11,
+      "share": 0.0591,
+      "cohesion": 0.44,
+      "depends_on": [
+        "utils",
+        "graph"
+      ],
+      "depended_on_by": [
+        "cli"
+      ],
+      "fan_in": 1,
+      "fan_out": 2,
+      "api_surface": [
+        "ingest",
+        "detect_language",
+        "clone_url"
+      ],
+      "entities": [
+        {
+          "name": "ingest",
+          "kind": "function"
+        },
+        {
+          "name": "detect_language",
+          "kind": "function"
+        },
+        {
+          "name": "clone_url",
+          "kind": "class"
+        },
+        {
+          "name": "_ingest_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_ingest_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_ingest_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_ingest_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_ingest_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 11,
+      "failure_ids": [
+        3
+      ],
+      "cluster_factor": 0.4706,
+      "intra_connectivity": 0.0727
+    },
+    {
+      "name": "parsers",
+      "node_id": "parsers",
+      "kind": "class",
+      "responsibility": "Tree-sitter based parsing per language; extracts entities and raw references from source files.",
+      "num_entities": 32,
+      "share": 0.172,
+      "cohesion": 0.69,
+      "depends_on": [
+        "graph",
+        "utils"
+      ],
+      "depended_on_by": [
+        "cli"
+      ],
+      "fan_in": 1,
+      "fan_out": 2,
+      "api_surface": [
+        "parse",
+        "JavaParser",
+        "PythonParser",
+        "TsParser"
+      ],
+      "entities": [
+        {
+          "name": "parse",
+          "kind": "class"
+        },
+        {
+          "name": "JavaParser",
+          "kind": "method"
+        },
+        {
+          "name": "PythonParser",
+          "kind": "function"
+        },
+        {
+          "name": "TsParser",
+          "kind": "class"
+        },
+        {
+          "name": "_parsers_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_parsers_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_parsers_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_parsers_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_parsers_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 32,
+      "failure_ids": [
+        3
+      ],
+      "cluster_factor": 0.6731,
+      "intra_connectivity": 0.0353
+    },
+    {
+      "name": "graph",
+      "node_id": "graph",
+      "kind": "class",
+      "responsibility": "The dependency graph model: entities, typed edges, lookups, and (de)serialization for the parse cache.",
+      "num_entities": 19,
+      "share": 0.1022,
+      "cohesion": 0.75,
+      "depends_on": [],
+      "depended_on_by": [
+        "parsers",
+        "clustering",
+        "recovery",
+        "smells",
+        "metrics",
+        "query",
+        "ingest"
+      ],
+      "fan_in": 7,
+      "fan_out": 0,
+      "api_surface": [
+        "DependencyGraph",
+        "Entity",
+        "Edge",
+        "to_json"
+      ],
+      "entities": [
+        {
+          "name": "DependencyGraph",
+          "kind": "class"
+        },
+        {
+          "name": "Entity",
+          "kind": "method"
+        },
+        {
+          "name": "Edge",
+          "kind": "function"
+        },
+        {
+          "name": "to_json",
+          "kind": "class"
+        },
+        {
+          "name": "_graph_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_graph_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_graph_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_graph_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_graph_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 19,
+      "failure_ids": [
+        1
+      ],
+      "cluster_factor": 0.3622,
+      "intra_connectivity": 0.0673
+    },
+    {
+      "name": "recovery",
+      "node_id": "recovery",
+      "kind": "module",
+      "responsibility": "Architecture recovery drivers: chooses an algorithm, assembles components, names them.",
+      "num_entities": 16,
+      "share": 0.086,
+      "cohesion": 0.47,
+      "depends_on": [
+        "clustering",
+        "graph",
+        "utils"
+      ],
+      "depended_on_by": [
+        "visualize",
+        "cli",
+        "query",
+        "smells",
+        "clustering",
+        "metrics"
+      ],
+      "fan_in": 6,
+      "fan_out": 3,
+      "api_surface": [
+        "recover",
+        "name_components",
+        "Component"
+      ],
+      "entities": [
+        {
+          "name": "recover",
+          "kind": "function"
+        },
+        {
+          "name": "name_components",
+          "kind": "function"
+        },
+        {
+          "name": "Component",
+          "kind": "class"
+        },
+        {
+          "name": "_recovery_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_recovery_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_recovery_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_recovery_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_recovery_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 16,
+      "failure_ids": [
+        0
+      ],
+      "cluster_factor": 0.2667,
+      "intra_connectivity": 0.05
+    },
+    {
+      "name": "clustering",
+      "node_id": "clustering",
+      "kind": "class",
+      "responsibility": "Clustering algorithms behind recovery: WCA, ACDC, LIMBO and package-based grouping.",
+      "num_entities": 27,
+      "share": 0.1452,
+      "cohesion": 0.82,
+      "depends_on": [
+        "graph",
+        "recovery",
+        "utils"
+      ],
+      "depended_on_by": [
+        "recovery"
+      ],
+      "fan_in": 1,
+      "fan_out": 3,
+      "api_surface": [
+        "wca",
+        "acdc",
+        "limbo",
+        "pkg_cluster"
+      ],
+      "entities": [
+        {
+          "name": "wca",
+          "kind": "class"
+        },
+        {
+          "name": "acdc",
+          "kind": "method"
+        },
+        {
+          "name": "limbo",
+          "kind": "function"
+        },
+        {
+          "name": "pkg_cluster",
+          "kind": "class"
+        },
+        {
+          "name": "_clustering_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_clustering_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_clustering_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_clustering_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_clustering_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 27,
+      "failure_ids": [
+        0
+      ],
+      "cluster_factor": 0.6306,
+      "intra_connectivity": 0.0499
+    },
+    {
+      "name": "smells",
+      "node_id": "smells",
+      "kind": "module",
+      "responsibility": "Architectural smell detectors: dependency cycles, concern overload, scattered functionality, link overload.",
+      "num_entities": 18,
+      "share": 0.0968,
+      "cohesion": 0.69,
+      "depends_on": [
+        "graph",
+        "recovery"
+      ],
+      "depended_on_by": [
+        "visualize",
+        "cli"
+      ],
+      "fan_in": 2,
+      "fan_out": 2,
+      "api_surface": [
+        "detect_smells",
+        "find_cycles",
+        "Smell"
+      ],
+      "entities": [
+        {
+          "name": "detect_smells",
+          "kind": "function"
+        },
+        {
+          "name": "find_cycles",
+          "kind": "function"
+        },
+        {
+          "name": "Smell",
+          "kind": "class"
+        },
+        {
+          "name": "_smells_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_smells_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_smells_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_smells_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_smells_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 18,
+      "failure_ids": [],
+      "cluster_factor": 0.6061,
+      "intra_connectivity": 0.0654
+    },
+    {
+      "name": "metrics",
+      "node_id": "metrics",
+      "kind": "module",
+      "responsibility": "Architecture quality metrics: RCI, TurboMQ/BasicMQ, intra/inter-connectivity.",
+      "num_entities": 12,
+      "share": 0.0645,
+      "cohesion": 0.77,
+      "depends_on": [
+        "graph",
+        "recovery"
+      ],
+      "depended_on_by": [
+        "visualize",
+        "cli"
+      ],
+      "fan_in": 2,
+      "fan_out": 2,
+      "api_surface": [
+        "compute_metrics",
+        "rci",
+        "turbo_mq"
+      ],
+      "entities": [
+        {
+          "name": "compute_metrics",
+          "kind": "function"
+        },
+        {
+          "name": "rci",
+          "kind": "function"
+        },
+        {
+          "name": "turbo_mq",
+          "kind": "class"
+        },
+        {
+          "name": "_metrics_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_metrics_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_metrics_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_metrics_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_metrics_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 12,
+      "failure_ids": [],
+      "cluster_factor": 0.5769,
+      "intra_connectivity": 0.1136
+    },
+    {
+      "name": "visualize",
+      "node_id": "visualize",
+      "kind": "module",
+      "responsibility": "Report rendering: HTML reports and Mermaid component diagrams from a recovered architecture.",
+      "num_entities": 15,
+      "share": 0.0806,
+      "cohesion": 0.66,
+      "depends_on": [
+        "recovery",
+        "smells",
+        "metrics"
+      ],
+      "depended_on_by": [
+        "cli"
+      ],
+      "fan_in": 1,
+      "fan_out": 3,
+      "api_surface": [
+        "visualize",
+        "render_html",
+        "mermaid_diagram"
+      ],
+      "entities": [
+        {
+          "name": "visualize",
+          "kind": "function"
+        },
+        {
+          "name": "render_html",
+          "kind": "function"
+        },
+        {
+          "name": "mermaid_diagram",
+          "kind": "class"
+        },
+        {
+          "name": "_visualize_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_visualize_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_visualize_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_visualize_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_visualize_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 15,
+      "failure_ids": [],
+      "cluster_factor": 0.5714,
+      "intra_connectivity": 0.0762
+    },
+    {
+      "name": "query",
+      "node_id": "query",
+      "kind": "module",
+      "responsibility": "Q&A over a recovered architecture: summarize, explain a component, find relevant entities.",
+      "num_entities": 13,
+      "share": 0.0699,
+      "cohesion": 0.73,
+      "depends_on": [
+        "graph",
+        "recovery",
+        "utils"
+      ],
+      "depended_on_by": [
+        "cli"
+      ],
+      "fan_in": 1,
+      "fan_out": 3,
+      "api_surface": [
+        "summarize",
+        "explain_component",
+        "find_relevant"
+      ],
+      "entities": [
+        {
+          "name": "summarize",
+          "kind": "function"
+        },
+        {
+          "name": "explain_component",
+          "kind": "function"
+        },
+        {
+          "name": "find_relevant",
+          "kind": "class"
+        },
+        {
+          "name": "_query_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_query_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_query_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_query_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_query_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 13,
+      "failure_ids": [],
+      "cluster_factor": 0.6,
+      "intra_connectivity": 0.0962
+    },
+    {
+      "name": "utils",
+      "node_id": "utils",
+      "kind": "module",
+      "responsibility": "Shared helpers: path handling, caching, subprocess wrappers, logging.",
+      "num_entities": 9,
+      "share": 0.0484,
+      "cohesion": 0.5,
+      "depends_on": [],
+      "depended_on_by": [
+        "parsers",
+        "ingest",
+        "clustering",
+        "recovery",
+        "query"
+      ],
+      "fan_in": 5,
+      "fan_out": 0,
+      "api_surface": [
+        "cache_key",
+        "run_cmd",
+        "log"
+      ],
+      "entities": [
+        {
+          "name": "cache_key",
+          "kind": "function"
+        },
+        {
+          "name": "run_cmd",
+          "kind": "function"
+        },
+        {
+          "name": "log",
+          "kind": "class"
+        },
+        {
+          "name": "_utils_helper_0",
+          "kind": "function"
+        },
+        {
+          "name": "_utils_helper_1",
+          "kind": "function"
+        },
+        {
+          "name": "_utils_helper_2",
+          "kind": "function"
+        },
+        {
+          "name": "_utils_helper_3",
+          "kind": "function"
+        },
+        {
+          "name": "_utils_helper_4",
+          "kind": "function"
+        }
+      ],
+      "entities_total": 9,
+      "failure_ids": [
+        3,
+        4
+      ],
+      "cluster_factor": 0.3684,
+      "intra_connectivity": 0.0972
+    }
+  ],
+  "edges": [
+    {
+      "source": "parsers",
+      "target": "graph",
+      "weight": 21,
+      "cyclic": false
+    },
+    {
+      "source": "clustering",
+      "target": "graph",
+      "weight": 17,
+      "cyclic": false
+    },
+    {
+      "source": "recovery",
+      "target": "clustering",
+      "weight": 14,
+      "cyclic": true
+    },
+    {
+      "source": "recovery",
+      "target": "graph",
+      "weight": 12,
+      "cyclic": false
+    },
+    {
+      "source": "smells",
+      "target": "graph",
+      "weight": 11,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "ingest",
+      "weight": 9,
+      "cyclic": false
+    },
+    {
+      "source": "metrics",
+      "target": "graph",
+      "weight": 9,
+      "cyclic": false
+    },
+    {
+      "source": "parsers",
+      "target": "utils",
+      "weight": 8,
+      "cyclic": false
+    },
+    {
+      "source": "visualize",
+      "target": "recovery",
+      "weight": 8,
+      "cyclic": false
+    },
+    {
+      "source": "query",
+      "target": "graph",
+      "weight": 8,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "recovery",
+      "weight": 7,
+      "cyclic": false
+    },
+    {
+      "source": "query",
+      "target": "recovery",
+      "weight": 7,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "visualize",
+      "weight": 6,
+      "cyclic": false
+    },
+    {
+      "source": "ingest",
+      "target": "utils",
+      "weight": 6,
+      "cyclic": false
+    },
+    {
+      "source": "smells",
+      "target": "recovery",
+      "weight": 6,
+      "cyclic": false
+    },
+    {
+      "source": "clustering",
+      "target": "recovery",
+      "weight": 5,
+      "cyclic": true
+    },
+    {
+      "source": "clustering",
+      "target": "utils",
+      "weight": 5,
+      "cyclic": false
+    },
+    {
+      "source": "visualize",
+      "target": "smells",
+      "weight": 5,
+      "cyclic": false
+    },
+    {
+      "source": "visualize",
+      "target": "metrics",
+      "weight": 5,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "parsers",
+      "weight": 5,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "smells",
+      "weight": 4,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "metrics",
+      "weight": 4,
+      "cyclic": false
+    },
+    {
+      "source": "metrics",
+      "target": "recovery",
+      "weight": 4,
+      "cyclic": false
+    },
+    {
+      "source": "cli",
+      "target": "query",
+      "weight": 3,
+      "cyclic": false
+    },
+    {
+      "source": "ingest",
+      "target": "graph",
+      "weight": 3,
+      "cyclic": false
+    },
+    {
+      "source": "recovery",
+      "target": "utils",
+      "weight": 3,
+      "cyclic": false
+    },
+    {
+      "source": "query",
+      "target": "utils",
+      "weight": 2,
+      "cyclic": false
+    }
+  ],
+  "failures": [
+    {
+      "id": 0,
+      "component": "recovery",
+      "type": "Dependency Cycle",
+      "severity": "high",
+      "headline": "Circular dependency",
+      "description": "recovery and clustering call into each other (recover() drives the algorithms, but the algorithms call back for component naming).",
+      "impact": "Changes ripple around the cycle: none of the involved components can be built, tested, or understood in isolation, and a refactor in one forces retesting all of them.",
+      "mitigation": "Break the cycle: extract the shared part into its own component, or invert one direction with an interface owned by the callee (dependency inversion).",
+      "effort": "medium \u2014 plan across a few PRs",
+      "affected": [
+        "recovery",
+        "clustering"
+      ]
+    },
+    {
+      "id": 1,
+      "component": "graph",
+      "type": "Link Overload",
+      "severity": "high",
+      "headline": "Link overload (too many connections)",
+      "description": "graph is depended on by 8 of 11 components (73% fan-in); nearly every change elsewhere can be affected by its API.",
+      "impact": "The component is coupled to a large share of the system; most changes elsewhere can reach it, making it a stability bottleneck.",
+      "mitigation": "Reduce fan-in/fan-out: introduce a facade, narrow the API surface, and cut dependencies that only need a small slice of it.",
+      "effort": "medium \u2014 plan across a few PRs",
+      "affected": [
+        "graph"
+      ]
+    },
+    {
+      "id": 2,
+      "component": "cli",
+      "type": "Concern Overload",
+      "severity": "medium",
+      "headline": "Component owns too many concerns",
+      "description": "cli orchestrates ingest, recovery, smells, metrics, visualization and query \u2014 six distinct concerns in one component.",
+      "impact": "The component accumulates unrelated responsibilities, so unrelated changes collide in the same place and its API keeps growing.",
+      "mitigation": "Split by concern: group entities that change together and move each group behind its own narrow interface.",
+      "effort": "low \u2014 localized change",
+      "affected": [
+        "cli"
+      ]
+    },
+    {
+      "id": 3,
+      "component": "ingest",
+      "type": "Scattered Functionality",
+      "severity": "medium",
+      "headline": "One concern scattered across components",
+      "description": "Path normalization and file filtering logic appears in ingest, parsers and utils rather than in one owner.",
+      "impact": "A single responsibility is implemented in several components, so every change to it is a multi-component change and behavior drifts between the copies.",
+      "mitigation": "Consolidate the concern into one owning component and have the others depend on it instead of re-implementing it.",
+      "effort": "medium \u2014 plan across a few PRs",
+      "affected": [
+        "ingest",
+        "parsers",
+        "utils"
+      ]
+    },
+    {
+      "id": 4,
+      "component": "utils",
+      "type": "Link Overload",
+      "severity": "low",
+      "headline": "Link overload (too many connections)",
+      "description": "utils is a grab-bag dependency for 6 components; its helpers have no single concern.",
+      "impact": "The component is coupled to a large share of the system; most changes elsewhere can reach it, making it a stability bottleneck.",
+      "mitigation": "Reduce fan-in/fan-out: introduce a facade, narrow the API surface, and cut dependencies that only need a small slice of it.",
+      "effort": "low \u2014 localized change",
+      "affected": [
+        "utils"
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "id": "entry",
+      "name": "Entry flow",
+      "description": "From entry component cli (nothing depends on it), following the heaviest dependency at each hop.",
+      "path": [
+        "cli",
+        "visualize",
+        "smells",
+        "recovery",
+        "clustering",
+        "graph"
+      ]
+    },
+    {
+      "id": "cycle",
+      "name": "Cycle walk",
+      "description": "clustering and recovery depend on each other. This trace walks the cycle once \u2014 every hop here is a refactoring hazard.",
+      "path": [
+        "clustering",
+        "recovery",
+        "clustering"
+      ]
+    }
+  ],
+  "scores": [
+    {
+      "name": "DependencyHealth",
+      "value": 0.9178,
+      "formula": "0.55*(1-InterConnectivity) + 0.45*(1-TwoWayPairRatio)"
+    },
+    {
+      "name": "ComponentBalance",
+      "value": 0.7928,
+      "formula": "1 - gini(component_sizes)"
+    },
+    {
+      "name": "HubBalance",
+      "value": 0.7944,
+      "formula": "1 - max(max(fan_in_ratio), max(fan_out_ratio))"
+    },
+    {
+      "name": "BoundaryClarity",
+      "value": 0.9806,
+      "formula": "1 - avg(min(fan_in_ratio, fan_out_ratio))"
+    },
+    {
+      "name": "DependencyDistribution",
+      "value": 0.7259,
+      "formula": "1 - gini(component_fan_loads)"
+    },
+    {
+      "name": "SmellDiscipline",
+      "value": 0.5909,
+      "formula": "1 - weighted_smell_burden"
+    },
+    {
+      "name": "PrincipleAlignmentScore",
+      "value": 0.8558,
+      "formula": "weighted average of principle-oriented normalized signals"
+    },
+    {
+      "name": "BalancedArchitectureScore",
+      "value": 0.638,
+      "formula": "0.50*cohesion_family + 0.35*PrincipleAlignmentScore + 0.15*SmellDiscipline"
+    }
+  ],
+  "signals": {
+    "AcyclicDependencies": 0.8636,
+    "LayeringHealth": 0.9042,
+    "ResponsibilityFocus": 0.8182,
+    "InterfaceSegregation": 0.9091,
+    "ComponentBalance": 0.7928,
+    "HubBalance": 0.7944,
+    "BoundaryClarity": 0.9806,
+    "DependencyDistribution": 0.7259,
+    "SmellDiscipline": 0.5909
+  },
+  "drivers": {
+    "risks": [
+      {
+        "name": "SmellDiscipline",
+        "value": 0.5909,
+        "gap_to_ideal": 0.4091
+      },
+      {
+        "name": "DependencyDistribution",
+        "value": 0.7259,
+        "gap_to_ideal": 0.2741
+      },
+      {
+        "name": "ComponentBalance",
+        "value": 0.7928,
+        "gap_to_ideal": 0.2072
+      }
+    ],
+    "strengths": [
+      {
+        "name": "BoundaryClarity",
+        "value": 0.9806,
+        "gap_to_ideal": 0.0194
+      },
+      {
+        "name": "InterfaceSegregation",
+        "value": 0.9091,
+        "gap_to_ideal": 0.0909
+      },
+      {
+        "name": "LayeringHealth",
+        "value": 0.9042,
+        "gap_to_ideal": 0.0958
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "title": "Circular dependency in recovery",
+      "why": "recovery and clustering call into each other (recover() drives the algorithms, but the algorithms call back for component naming).",
+      "action": "Break the cycle: extract the shared part into its own component, or invert one direction with an interface owned by the callee (dependency inversion).",
+      "components": [
+        "recovery",
+        "clustering"
+      ],
+      "severity": "high",
+      "effort": "medium \u2014 plan across a few PRs",
+      "improves": "RCI \u00b7 LayeringHealth \u00b7 AcyclicDependencies",
+      "score": 4,
+      "kind": "planned",
+      "source": "Dependency Cycle",
+      "rank": 1
+    },
+    {
+      "title": "Link overload (too many connections) in graph",
+      "why": "graph is depended on by 8 of 11 components (73% fan-in); nearly every change elsewhere can be affected by its API.",
+      "action": "Reduce fan-in/fan-out: introduce a facade, narrow the API surface, and cut dependencies that only need a small slice of it.",
+      "components": [
+        "graph"
+      ],
+      "severity": "high",
+      "effort": "medium \u2014 plan across a few PRs",
+      "improves": "InterfaceSegregation \u00b7 DependencyHealth",
+      "score": 4,
+      "kind": "planned",
+      "source": "Link Overload",
+      "rank": 2
+    },
+    {
+      "title": "Component owns too many concerns in cli",
+      "why": "cli orchestrates ingest, recovery, smells, metrics, visualization and query \u2014 six distinct concerns in one component.",
+      "action": "Split by concern: group entities that change together and move each group behind its own narrow interface.",
+      "components": [
+        "cli"
+      ],
+      "severity": "medium",
+      "effort": "low \u2014 localized change",
+      "improves": "ResponsibilityFocus \u00b7 TurboMQ",
+      "score": 3,
+      "kind": "quick win",
+      "source": "Concern Overload",
+      "rank": 3
+    },
+    {
+      "title": "One concern scattered across components in ingest",
+      "why": "Path normalization and file filtering logic appears in ingest, parsers and utils rather than in one owner.",
+      "action": "Consolidate the concern into one owning component and have the others depend on it instead of re-implementing it.",
+      "components": [
+        "ingest",
+        "parsers",
+        "utils"
+      ],
+      "severity": "medium",
+      "effort": "medium \u2014 plan across a few PRs",
+      "improves": "ResponsibilityFocus \u00b7 RCI",
+      "score": 2,
+      "kind": "planned",
+      "source": "Scattered Functionality",
+      "rank": 4
+    },
+    {
+      "title": "Link overload (too many connections) in utils",
+      "why": "utils is a grab-bag dependency for 6 components; its helpers have no single concern.",
+      "action": "Reduce fan-in/fan-out: introduce a facade, narrow the API surface, and cut dependencies that only need a small slice of it.",
+      "components": [
+        "utils"
+      ],
+      "severity": "low",
+      "effort": "low \u2014 localized change",
+      "improves": "InterfaceSegregation \u00b7 DependencyHealth",
+      "score": 1,
+      "kind": "quick win",
+      "source": "Link Overload",
+      "rank": 5
+    }
+  ]
+}

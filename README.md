@@ -58,6 +58,27 @@ The interactive HTML report renders this diagram, the full component/entity
 breakdown, every smell with its explanation, and all six metrics. **View it live:**
 <https://lemduc.github.io/arcade-analyze-skill/>
 
+### App-style visualizer demo
+
+[![Animated tour of the arcade visualizer: architecture diagram with drill-down, dependencies + DSM, failure points, recommendations, knowledge scores, an animated flow simulation, and the dark/light toggle](examples/arcade-visualizer-demo.gif)](https://lemduc.github.io/arcade-analyze-skill/arcade-visualizer-demo.html)
+
+**Try it live:** <https://lemduc.github.io/arcade-analyze-skill/arcade-visualizer-demo.html>
+(no install needed — it's the committed
+[`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html),
+which you can also download and open locally without arcade-agent). It is a
+single-page workbench with sidebar views: pan/zoom architecture diagram with
+click-to-drill details, weighted dependencies + DSM, failure-point cards, a
+ranked **Architect Recommendations** roadmap (quick wins / planned / big bets),
+an animated hop-by-hop flow simulation with custom trace recording, a Knowledge
+view with **balanced scores, principle signals, strengths/risks and
+per-component quality**, and a feedback bar — plus a **dark/light mode toggle**
+(☀️/🌙 in the top bar; the choice persists across reloads). Regenerate it with:
+
+```bash
+python3 scripts/visualizer.py --from-model examples/visualizer-demo-model.json \
+  -o examples/arcade-visualizer-demo.html --no-open
+```
+
 ### Reproduce it
 
 ```bash
@@ -183,6 +204,9 @@ markdown.
 
 # Interactive, explorable report — click a component to drill in
 "$ARCADE_AGENT_HOME/.venv/bin/python" scripts/interactive_report.py <source> -l java
+
+# App-style visualizer — diagram + DSM + failure points + animated flow simulation
+"$ARCADE_AGENT_HOME/.venv/bin/python" scripts/visualizer.py <source> -l java
 ```
 
 The **interactive report** (`interactive_report.py`) is an **optional**
@@ -194,6 +218,43 @@ depends on it, cohesion, API surface, and the smells that touch it. Dependency
 chips are themselves clickable, so you walk the graph instead of scrolling a
 page. Everything is embedded in one self-contained HTML file (only Mermaid loads
 from a CDN).
+
+The **visualizer** (`visualizer.py`) goes one step further: an app-style
+single-page workbench (fully offline — no CDN; dark by default, with a
+persistent dark/light mode toggle in the top bar) with sidebar views:
+
+- **Architecture** — pan/zoom node-card diagram with a Components (L1) /
+  Detailed (L2) toggle and a click-to-drill side panel;
+- **Dependencies** — weighted dependency list + Design Structure Matrix,
+  cyclic pairs in red;
+- **Failure Points** — smells presented as failure cards: severity, concrete
+  impact, suggested mitigation, estimated effort;
+- **Recommendations** — a ranked, senior-architect-style improvement plan
+  (quick wins / planned work / big bets) derived from the failure points and
+  the weakest principle signals, each with the concrete components to touch,
+  the metrics it improves, and the estimated effort;
+- **Simulate** — animate a dependency flow hop-by-hop through the graph with a
+  per-hop coupling waterfall; traces are auto-derived (entry flow, hub fan-out,
+  cycle walk) and you can record custom ones by clicking components;
+- **Knowledge** — the full arcade-agent metric set with plain-English
+  interpretation: core metrics with their evidence (intra/inter edge counts,
+  bidirectional pairs…), the derived **balanced scores** and **principle
+  signals** (acyclic deps, layering health, hub balance…), strengths vs risks,
+  and a per-component quality table (cluster factor, intra-connectivity);
+- **Comments** — a feedback bar whose notes can be copied out as a
+  ready-to-paste prompt for Claude.
+
+**Live mode** (`--serve`) turns the visualizer into a two-way loop with an
+agent: `visualizer.py --from-model model.json --serve` serves the app on
+localhost, writes every feedback-bar note to `<model>-feedback.json` on disk
+(where Claude can read it), and auto-reloads the page within ~2 seconds
+whenever the model JSON changes — so Claude reads your feedback, edits the
+model, and your browser view refreshes itself.
+
+A committed demo (no arcade-agent needed) lives at
+[`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html),
+rendered from [`examples/visualizer-demo-model.json`](examples/visualizer-demo-model.json)
+via `visualizer.py --from-model`.
 
 **Enforcing architecture in CI:** define rules in `.arcade-rules.json` (see
 [`assets/arcade-rules.sample.json`](assets/arcade-rules.sample.json)) and copy
@@ -260,6 +321,7 @@ arcade-analyze-skill/
 │   ├── validate.py               # 9. rule + layered-architecture validation
 │   ├── analyze_system.py         # 10. multi-module / microservices view
 │   ├── interactive_report.py     # 11. explorable HTML report (click to drill in)
+│   ├── visualizer.py             # 12. app-style visualizer (diagram/DSM/failures/simulate)
 │   ├── _spec.py                  # arcade-guard: architecture-contract engine
 │   ├── guard.py                  # arcade-guard CLI (init/check/propose/preview/...)
 │   └── guard_mcp.py              # arcade-guard MCP server (agent-callable tools)
