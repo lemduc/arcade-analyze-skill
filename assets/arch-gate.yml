@@ -6,8 +6,12 @@
 # bottlenecks). Add a .arcade-rules.json to your repo root first — see
 # arcade-rules.sample.json.
 #
-# Assumes arcade-agent is pip-installable (or vendored). Adjust the install step
-# and the SKILL_DIR/source path to your setup.
+# The skill's scripts resolve arcade-agent from a *source checkout* — they put
+# <ARCADE_AGENT_HOME>/src on sys.path themselves. So this workflow checks
+# arcade-agent out at a pinned tag and installs it from that tree: the checkout
+# satisfies the layout, the install supplies the deps (tree-sitter, networkx,
+# scipy, numpy, jinja2). A bare `pip install arcade-agent` is not enough on its
+# own, because there'd be no <home>/src for the scripts to point at.
 
 name: Architecture gate
 
@@ -25,14 +29,19 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install arcade-agent
+      - name: Check out arcade-agent (pinned)
+        uses: actions/checkout@v4
+        with:
+          repository: lemduc/arcade-agent
+          ref: v0.2.0
+          path: .arcade-agent
+
+      - name: Install arcade-agent and its parsers
         run: |
           python -m pip install --upgrade pip
-          # Replace with your install method, e.g.:
-          #   pip install arcade-agent
-          # or, against a checkout:
-          #   pip install -e /path/to/arcade-agent
-          pip install git+https://github.com/lemduc/arcade-agent.git
+          # The [languages] extra pulls the tree-sitter grammars for Kotlin,
+          # TypeScript, Go, and C/C++. Drop it if you only analyze Java/Python.
+          pip install "./.arcade-agent[languages]"
 
       - name: Check out the arcade-analyze skill (for the validate script)
         uses: actions/checkout@v4
@@ -42,11 +51,9 @@ jobs:
 
       - name: Validate architecture against rules
         env:
-          # arcade-agent is installed into the job's python, so point the script
-          # at that environment's site-packages parent. With a pip install the
-          # editable-src trick isn't needed; pass --arcade-home only if you
-          # vendored a checkout.
-          ARCADE_AGENT_HOME: ${{ github.workspace }}/arcade-agent
+          # Must be the arcade-agent *source checkout* — the skill's scripts add
+          # <home>/src to sys.path rather than relying on the installed package.
+          ARCADE_AGENT_HOME: ${{ github.workspace }}/.arcade-agent
         run: |
           python .arcade-skill/scripts/validate.py "${{ github.workspace }}" \
             --rules "${{ github.workspace }}/.arcade-rules.json" \

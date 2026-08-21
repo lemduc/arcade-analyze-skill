@@ -97,6 +97,11 @@ def main() -> None:
             "num_components": len(arch.components),
             "num_smells": len(smells),
             "RCI": metric_map.get("RCI"),
+            # BasicMQ, not TurboMQ, is the headline cross-algorithm number:
+            # algorithms recover different component counts, and TurboMQ is the
+            # unbounded sum of per-component cluster factors, so it rises with
+            # k. BasicMQ is the normalized mean and stays comparable.
+            "BasicMQ": metric_map.get("BasicMQ"),
             "TurboMQ": metric_map.get("TurboMQ"),
             "metrics": [{"name": m.name, "value": m.value} for m in metrics],
         })
