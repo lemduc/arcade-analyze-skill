@@ -54,11 +54,12 @@ breakdown, every smell with its explanation, and all six metrics. **View it live
 
 ### App-style visualizer demo
 
-![Animated tour of the arcade visualizer: architecture diagram with drill-down, dependencies + DSM, failure points, recommendations, knowledge scores, an animated flow simulation, and the dark/light toggle](examples/arcade-visualizer-demo.gif)
+[![Animated tour of the arcade visualizer: architecture diagram with drill-down, dependencies + DSM, failure points, recommendations, knowledge scores, an animated flow simulation, and the dark/light toggle](examples/arcade-visualizer-demo.gif)](https://lemduc.github.io/arcade-analyze-skill/arcade-visualizer-demo.html)
 
-A committed, dependency-free demo of the **app-style visualizer** (workflow #12)
-is at [`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html) —
-download it and open it in a browser (no arcade-agent needed). It is a
+**Try it live:** <https://lemduc.github.io/arcade-analyze-skill/arcade-visualizer-demo.html>
+(no install needed — it's the committed
+[`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html),
+which you can also download and open locally without arcade-agent). It is a
 single-page workbench with sidebar views: pan/zoom architecture diagram with
 click-to-drill details, weighted dependencies + DSM, failure-point cards, a
 ranked **Architect Recommendations** roadmap (quick wins / planned / big bets),
