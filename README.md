@@ -52,6 +52,22 @@ The interactive HTML report renders this diagram, the full component/entity
 breakdown, every smell with its explanation, and all six metrics. **View it live:**
 <https://lemduc.github.io/arcade-analyze-skill/>
 
+### App-style visualizer demo
+
+A committed, dependency-free demo of the **app-style visualizer** (workflow #12)
+is at [`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html) —
+download it and open it in a browser (no arcade-agent needed). It is a
+single-page workbench with sidebar views: pan/zoom architecture diagram with
+click-to-drill details, weighted dependencies + DSM, failure-point cards,
+an animated hop-by-hop flow simulation with custom trace recording, a knowledge
+panel, and a feedback bar — plus a **dark/light mode toggle** (☀️/🌙 in the top
+bar; the choice persists across reloads). Regenerate it with:
+
+```bash
+python3 scripts/visualizer.py --from-model examples/visualizer-demo-model.json \
+  -o examples/arcade-visualizer-demo.html --no-open
+```
+
 ### Reproduce it
 
 ```bash
@@ -190,8 +206,9 @@ chips are themselves clickable, so you walk the graph instead of scrolling a
 page. Everything is embedded in one self-contained HTML file (only Mermaid loads
 from a CDN).
 
-The **visualizer** (`visualizer.py`) goes one step further: a dark, app-style
-single-page workbench (fully offline — no CDN) with sidebar views:
+The **visualizer** (`visualizer.py`) goes one step further: an app-style
+single-page workbench (fully offline — no CDN; dark by default, with a
+persistent dark/light mode toggle in the top bar) with sidebar views:
 
 - **Architecture** — pan/zoom node-card diagram with a Components (L1) /
   Detailed (L2) toggle and a click-to-drill side panel;
