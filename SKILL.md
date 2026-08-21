@@ -10,8 +10,8 @@ description: >-
   components fit together. Triggers on requests like "analyze the architecture
   of X", "recover the architecture", "what does this codebase look like
   structurally", "find architectural smells / cycles", "visualize the
-  components", "is this code well-modularized", or pointing at a Java / Python /
-  C / C++ / TypeScript / JavaScript / Go repo and asking how it's organized.
+  components", "is this code well-modularized", or pointing at a Java / Kotlin /
+  Python / C / C++ / TypeScript / JavaScript / Go repo and asking how it's organized.
   Works on a local directory or a git URL.
 ---
 
@@ -23,7 +23,8 @@ Evaluator). It parses source with tree-sitter, recovers a component-level
 architecture via clustering, detects architectural smells, computes quality
 metrics, and renders an interactive HTML report.
 
-This skill exposes four workflows, each a bundled script in `scripts/`:
+This skill exposes twelve workflows, each a bundled script in `scripts/`. The four
+core ones:
 
 | Workflow | Script | Use for |
 |----------|--------|---------|
@@ -51,9 +52,14 @@ pipeline depends on packages installed only in that venv (tree-sitter, networkx,
 scipy, numpy, jinja2). The general form:
 
 ```bash
-ARCADE_HOME=/Users/lemduc/Desktop/side_project_workspace/arcade-agent
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/<script>.py" <args...>
+export ARCADE_AGENT_HOME=/Users/lemduc/personal_workspace/arcade-agent
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/<script>.py" <args...>
 ```
+
+**Export `ARCADE_AGENT_HOME` — that exact name.** It does double duty: the shell
+uses it to find the venv interpreter, and the script itself reads it to locate
+the checkout. Setting some other variable (or only passing the venv path) makes
+every script exit with "arcade-agent location is not set".
 
 `<skill-dir>` is the directory containing this SKILL.md. Each script resolves the
 arcade-agent location from `--arcade-home`, then the `$ARCADE_AGENT_HOME`
@@ -62,8 +68,7 @@ environment variable (it errors out with guidance if neither is set) — and put
 editable-install `.pth` points at a stale path. Don't try to `import
 arcade_agent` directly or `pip install` anything; just use the venv interpreter.
 On this machine arcade-agent lives at
-`/Users/lemduc/Desktop/side_project_workspace/arcade-agent`, so set `ARCADE_HOME`
-/ `ARCADE_AGENT_HOME` to that.
+`/Users/lemduc/personal_workspace/arcade-agent`.
 
 Every script prints a `===ARCADE_SUMMARY_JSON===` … `===END_ARCADE_SUMMARY_JSON===`
 block to stdout. Parse that block for the structured result and relay it in chat;
@@ -79,14 +84,16 @@ for you (item 1d). Use this for analyzing repos you don't have locally.
 The default workflow: one codebase → interactive HTML report, auto-opened.
 
 ```bash
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/analyze.py" \
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/analyze.py" \
   /path/to/the/codebase --language java --algorithm pkg
 ```
 
 ### Key options
 
-- `--language / -l` — `java`, `python`, `c`, `cpp`. Auto-detected if omitted, but
-  pass it when you know it to avoid mis-detection on polyglot repos.
+- `--language / -l` — `java`, `kotlin`, `python`, `c`, `cpp`, `typescript`, `go`,
+  or `multi` (parse every detected language and relink cross-language edges).
+  Auto-detected if omitted, but pass it when you know it to avoid mis-detection
+  on polyglot repos.
 - `--algorithm / -a` — recovery algorithm. Default `pkg` (package-based, fast,
   no LLM). Others: `wca`, `acdc`, `arc`, `limbo`. See `references/algorithms.md`.
 - `--num-clusters / -n` — target component count for `wca`/`acdc`/`arc`/`limbo`.
@@ -115,7 +122,7 @@ codebase that looks clean under `pkg` (package-based) but tangled under `wca`
 (dependency-based) is telling you the package layout hides the real coupling.
 
 ```bash
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/compare_algorithms.py" \
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/compare_algorithms.py" \
   /path/to/codebase --language java --algorithms pkg,wca,acdc
 ```
 
@@ -124,8 +131,11 @@ codebase that looks clean under `pkg` (package-based) but tangled under `wca`
 - `--num-clusters / -n` — **strongly recommended** when including `wca`: without a
   target count WCA over-fragments (one cluster per entity). Set it to roughly the
   `pkg` component count for a fair comparison.
-- The summary JSON lists per-algorithm component count, smell count, RCI, and
-  TurboMQ. Contrast them in chat and link the comparison report.
+- The summary JSON lists per-algorithm component count, smell count, RCI,
+  BasicMQ, and TurboMQ. **Contrast on RCI and BasicMQ, not TurboMQ** — each
+  algorithm recovers a different number of components, and TurboMQ is an
+  unbounded sum that rises with component count, so ranking algorithms by it
+  just rewards whichever one made the most clusters. Link the comparison report.
 
 ---
 
@@ -137,7 +147,7 @@ touched. Use for "what changed architecturally since v1.0?", tracking tech-debt
 accrual, or preparing an architecture-review before/after.
 
 ```bash
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/diff_versions.py" \
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/diff_versions.py" \
   /path/to/LOCAL/git/repo --from v1.0.0 --to v1.2.0 --language java
 ```
 
@@ -160,7 +170,7 @@ This is the back-end for natural-language Q&A: map the architect's question to a
 sub-command, run it, and relay the JSON.
 
 ```bash
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/query.py" <subcommand> /path/to/codebase [args]
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/query.py" <subcommand> /path/to/codebase [args]
 ```
 
 | Sub-command | Args | Answers |
@@ -205,14 +215,14 @@ These produce architect-grade deliverables. All take `<source>` + `--language`
 | 12 | `visualizer.py` | **App-style** SPA (offline, no CDN; dark/light toggle): sidebar views — pan/zoom component diagram with L1/L2 detail toggle and drill-down panel, weighted dependency list + DSM, smells presented as *failure-point cards* (severity, impact, mitigation, effort), a ranked **Architect Recommendations** roadmap (quick wins / planned / big bets), an **animated dependency-flow simulator** with per-hop waterfall (auto-derived traces + user-recorded ones), a Knowledge view with **balanced scores, principle signals, strengths/risks, and per-component quality** (cluster factor, intra-connectivity), and a feedback bar. With `--serve` it becomes a **live agent loop**: browser feedback is written to a JSON file on disk and the page auto-reloads whenever the model JSON changes | They want the full "architecture recovery workbench" experience — demos, walkthroughs, simulating how a change flows through components, or a live feedback loop with Claude |
 
 ```bash
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/summary_report.py"  <source> -l java -o summary.md
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/interactive_report.py" <source> -l java
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py"      <source> -l java
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/dsm.py"             <source> -l java
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/export_c4.py"       <source> -l java -o out/
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/refactor_plan.py"   <source> -l java -o plan.md
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/validate.py"        <source> -l java --rules .arcade-rules.json
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/analyze_system.py"  <moduleA> <moduleB> <moduleC> -l java
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/summary_report.py"  <source> -l java -o summary.md
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/interactive_report.py" <source> -l java
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py"      <source> -l java
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/dsm.py"             <source> -l java
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/export_c4.py"       <source> -l java -o out/
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/refactor_plan.py"   <source> -l java -o plan.md
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/validate.py"        <source> -l java --rules .arcade-rules.json
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/analyze_system.py"  <moduleA> <moduleB> <moduleC> -l java
 ```
 
 **Rules & CI:** `validate.py` reads `.arcade-rules.json` (sample in
@@ -243,7 +253,7 @@ the collected feedback into a prompt to paste back into a Claude session.
 static file, serve the app on localhost:
 
 ```bash
-"$ARCADE_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py" \
+"$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/visualizer.py" \
   --from-model model.json --serve --port 8123          # or: <source> -l java --serve
 ```
 
@@ -262,13 +272,21 @@ names two files:
 So the loop is: user annotates in the browser → you read the feedback JSON →
 you edit the model JSON → their page auto-reloads.
 
-**Language support:** Java, Python, C/C++, **TypeScript/JavaScript** (`.ts/.tsx/
-.js/.jsx`), and **Go** are supported (`--language typescript` / `go`). TypeScript
-and Go need their tree-sitter grammars in the arcade-agent venv (`tree-sitter-
-typescript`, `tree-sitter-go` — declared in arcade-agent's optional `languages`
-deps). Very large TS trees (~2k+ files) parse slowly; scope with `--source-root`
-or point at a sub-package. If a language errors, check
+**Language support:** Java, **Kotlin**, Python, C/C++, **TypeScript/JavaScript**
+(`.ts/.tsx/.js/.jsx`), and **Go** are supported (`--language kotlin` /
+`typescript` / `go`). Kotlin, TypeScript, Go, and C/C++ need their tree-sitter
+grammars in the arcade-agent venv (declared in arcade-agent's optional
+`languages` extra). Very large TS trees (~2k+ files) parse slowly; scope with
+`--source-root` or point at a sub-package. If a language errors, check
 `<arcade-home>/src/arcade_agent/parsers/`.
+
+**Polyglot repos:** pass `--language multi` to parse every detected language in
+one pass. Cross-language edges are only linked *within a language family* —
+currently just the JVM family (`java` + `kotlin`), the one validated pair. Other
+languages are unioned without inventing edges between them, so a Python + Java
+repo yields both graphs side by side rather than a fabricated bridge. Use this
+for mixed Java/Kotlin services, where a single-language parse would miss half
+the dependencies.
 
 ---
 
@@ -306,9 +324,17 @@ status: `GUARDRAIL_PLAN.md`.
 - **Smells** — flag `high`-severity ones first. Common types: dependency cycles
   (BDC), concern overload (BCO), scattered functionality (SPF), link overload
   (BUO). Explain the concrete impact, not just the label.
-- **Metrics** — `RCI` and `TurboMQ`/`BasicMQ` near 1.0 indicate cohesive,
-  well-separated components; low values or high `InterConnectivity` suggest
-  tangled boundaries. Treat these as signals, not verdicts.
+- **Metrics** — `RCI` and `BasicMQ` are normalized to `[0, 1]`; near 1.0 means
+  cohesive, well-separated components, while low values or high
+  `InterConnectivity` suggest tangled boundaries. Treat these as signals, not
+  verdicts.
+- **`TurboMQ` is not on a 0–1 scale.** It is the Bunch-style *sum* of per-component
+  cluster factors (Mitchell & Mancoridis), so it grows with component count —
+  a 5-component recovery scoring `3.37` is normal, not broken. Never read it as
+  a percentage or compare it across codebases with different component counts.
+  For a bounded number use `BasicMQ` (the normalized mean) or the `normalized`
+  field inside TurboMQ's own details. To compare two recoveries by TurboMQ, check
+  `num_components` matches first.
 
 The HTML reports are self-contained except that they load Mermaid from a CDN to
 render the diagram, so the diagram needs internet to draw; all other report

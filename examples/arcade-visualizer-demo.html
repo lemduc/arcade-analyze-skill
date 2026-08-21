@@ -728,8 +728,10 @@ const sigColor=v=>v>=.75?'var(--green)':v>=.5?'var(--blue)':v>=.3?'var(--amber)'
 function renderKnow(){
   const cards=DATA.metrics.map(m=>{
     const extra=fmtDetails(m);
+    // TurboMQ's value is an unbounded sum of cluster factors; judge the normalized form.
+    const hv=(m.name==='TurboMQ'&&m.details&&m.details.normalized!=null)?+m.details.normalized:+m.value;
     return `<div class="kcard"><div class="kname">${esc(m.name)}</div><div class="kval">${(+m.value).toFixed(3)}</div>`+
-      `<p>${esc(metricHelp(m.name,+m.value))}</p>`+(extra?`<p class="kmeta">${esc(extra)}</p>`:'')+'</div>';}).join('');
+      `<p>${esc(metricHelp(m.name,hv))}</p>`+(extra?`<p class="kmeta">${esc(extra)}</p>`:'')+'</div>';}).join('');
 
   // Balanced / principle-aligned scores (arcade-agent's derived metrics).
   const scores=DATA.scores||[], signals=DATA.signals||{}, drivers=DATA.drivers||{};
