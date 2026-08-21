@@ -103,6 +103,101 @@ def _effort(severity: str, affected: int) -> str:
     return "low — localized change"
 
 
+def _recommendations(failures: list[dict], signals: dict,
+                     components: list[dict], edges: list[dict]) -> list[dict]:
+    """Rank senior-architect-style improvement actions.
+
+    Two sources: every detected smell becomes an action (with its mitigation),
+    and weak principle signals become targeted advice naming the concrete
+    components the numbers point at. Sorted so high-severity / low-effort work
+    ("quick wins") comes first.
+    """
+    sevw = {"critical": 3, "high": 3, "medium": 2, "low": 1}
+    effw = {"low": 1, "medium": 2, "high": 3}
+    payoff = {"cycle": "RCI · LayeringHealth · AcyclicDependencies",
+              "concern": "ResponsibilityFocus · TurboMQ",
+              "scattered": "ResponsibilityFocus · RCI",
+              "link": "InterfaceSegregation · DependencyHealth"}
+    recs = []
+    for f in failures:
+        eff = f["effort"].split(" ")[0]
+        low = f["type"].lower()
+        recs.append({
+            "title": f["headline"] + (f" in {f['component']}"
+                                      if f["component"] != "system-wide" else ""),
+            "why": f["description"] or f["impact"],
+            "action": f["mitigation"],
+            "components": f["affected"],
+            "severity": f["severity"],
+            "effort": f["effort"],
+            "improves": next((v for k, v in payoff.items() if k in low),
+                             "BalancedArchitectureScore"),
+            "score": sevw.get(f["severity"], 1) * 2 - effw.get(eff, 2),
+            "kind": "quick win" if eff == "low" else ("big bet" if eff == "high" else "planned"),
+            "source": f["type"],
+        })
+
+    if signals and components:
+        biggest = max(components, key=lambda c: c["num_entities"])
+        hub = max(components, key=lambda c: c["fan_in"] + c["fan_out"])
+        blurred = [c["name"] for c in components if min(c["fan_in"], c["fan_out"]) >= 3]
+        cyclic = sorted({e["source"] for e in edges if e["cyclic"]})
+        advice = {
+            "ComponentBalance": (
+                "Rebalance component sizes",
+                f"'{biggest['name']}' holds {biggest['num_entities']} entities "
+                f"({biggest['share'] * 100:.0f}% of the system). Split it along its internal "
+                "seams and merge tiny fragments so no component dominates.",
+                [biggest["name"]]),
+            "HubBalance": (
+                "Reduce hub dominance",
+                f"'{hub['name']}' concentrates the most coupling (fan-in {hub['fan_in']}, "
+                f"fan-out {hub['fan_out']}). Move its responsibilities behind narrower, "
+                "purpose-specific interfaces so fewer components need to touch it directly.",
+                [hub["name"]]),
+            "BoundaryClarity": (
+                "Sharpen component boundaries",
+                "These components are heavy producers and consumers at once — split inbound "
+                "and outbound roles, or extract the shared part they trade through: "
+                + ", ".join(blurred[:4]) + ".",
+                blurred[:4]),
+            "DependencyDistribution": (
+                "Spread dependency load",
+                f"Coupling concentrates on a few components (led by '{hub['name']}'). "
+                "Introduce facades so most components depend on stable, narrow interfaces "
+                "instead of each other.",
+                [hub["name"]]),
+            "LayeringHealth": (
+                "Re-establish strict layering",
+                "Remove two-way component pairs: pick a direction for each cyclic pair and "
+                "invert the reverse edge with an interface owned by the lower layer.",
+                cyclic[:4]),
+        }
+        for name, val in sorted(signals.items(), key=lambda kv: kv[1]):
+            if val >= 0.55 or name not in advice:
+                continue
+            title, action, comps = advice[name]
+            if not comps:
+                continue
+            recs.append({
+                "title": title,
+                "why": f"The {name} signal is weak ({val:.2f} of 1.0).",
+                "action": action,
+                "components": comps,
+                "severity": "medium" if val >= 0.35 else "high",
+                "effort": "medium — plan across a few PRs",
+                "improves": name,
+                "score": 1,
+                "kind": "planned",
+                "source": "principle signal",
+            })
+
+    recs.sort(key=lambda r: -r["score"])
+    for i, r in enumerate(recs):
+        r["rank"] = i + 1
+    return recs[:12]
+
+
 def _derive_traces(names: list[str], edges: list[dict]) -> list[dict]:
     """Derive a few interesting flows to animate: an entry-point walk, the
     biggest hub's fan-out walk, and (if the graph has one) a cycle walk."""
@@ -254,6 +349,26 @@ def _build_model(bundle, algorithm: str) -> dict:
         fan_out[e["source"]] += 1
         fan_in[e["target"]] += 1
 
+    # Full metric payload (values + each metric's details dict), plus the
+    # derived balanced/principle scores when the installed arcade-agent has them.
+    metric_items = [{"name": m.name, "value": round(m.value, 4),
+                     "details": dict(m.details or {})} for m in metrics]
+    scores: list[dict] = []
+    signals: dict = {}
+    drivers: dict = {}
+    try:
+        from arcade_agent.algorithms.coupling import compute_balanced_scores
+        derived, signals, drivers = compute_balanced_scores(arch, graph, smells, metrics)
+        scores = [{"name": m.name, "value": round(m.value, 4),
+                   "formula": (m.details or {}).get("formula", "")} for m in derived]
+    except Exception as exc:  # older arcade-agent without balanced scores
+        print(f"      (balanced scores unavailable: {exc})", flush=True)
+
+    cf_by_comp = next((m["details"].get("cluster_factors", {})
+                       for m in metric_items if m["name"] == "TurboMQ"), {})
+    intra_by_comp = next((m["details"].get("per_component", {})
+                          for m in metric_items if m["name"] == "IntraConnectivity"), {})
+
     components = []
     for c in arch.components:
         det = explain_component(arch, graph, c.name)
@@ -274,6 +389,8 @@ def _build_model(bundle, algorithm: str) -> dict:
             "depended_on_by": det.get("depended_on_by", []),
             "fan_in": fan_in[c.name],
             "fan_out": fan_out[c.name],
+            "cluster_factor": cf_by_comp.get(c.name),
+            "intra_connectivity": intra_by_comp.get(c.name),
             "api_surface": [f.rsplit(".", 1)[-1] for f in det.get("api_surface", [])][:40],
             "entities": [{"name": e["name"], "kind": e["kind"]} for e in entities][:60],
             "entities_total": len(entities),
@@ -287,10 +404,14 @@ def _build_model(bundle, algorithm: str) -> dict:
         "algorithm": algorithm,
         "num_entities": graph.num_entities,
         "num_edges": graph.num_edges,
-        "metrics": [{"name": m.name, "value": round(m.value, 4)} for m in metrics],
+        "metrics": metric_items,
+        "scores": scores,
+        "signals": signals,
+        "drivers": drivers,
         "components": components,
         "edges": edges,
         "failures": failures,
+        "recommendations": _recommendations(failures, signals, components, edges),
         "traces": _derive_traces(names, edges),
     }
 
@@ -505,6 +626,18 @@ select,.btn{background:var(--panel);border:1px solid var(--line2);color:var(--fg
 .kcard .kname{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .kcard .kval{font-size:22px;font-weight:700;margin:4px 0 5px;color:var(--linkblue)}
 .kcard p{margin:0;font-size:11.5px;color:var(--body2);line-height:1.5}
+.kcard .kmeta{margin-top:5px;font-size:10.5px;color:var(--muted)}
+.sigrow{display:flex;align-items:center;gap:10px;padding:5px 0;font-size:11.5px}
+.sigrow .sn{width:190px;color:var(--body2);flex-shrink:0}
+.sigrow .sbar{flex:1;height:7px;background:var(--panel2);border-radius:99px;overflow:hidden}
+.sigrow .sbar i{display:block;height:100%;border-radius:99px}
+.sigrow .sv{width:44px;text-align:right;color:var(--linkblue);font-weight:600}
+.qtab{border-collapse:collapse;font-size:11.5px;min-width:560px}
+.qtab td,.qtab th{border:1px solid var(--dsmline);padding:5px 10px;text-align:center}
+.qtab th{background:var(--bg2);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.rank{font-weight:800;color:var(--linkblue);margin-right:2px}
+#livePill{font-size:10px;font-weight:700;color:var(--green);border:1px solid var(--green);
+  border-radius:999px;padding:2px 9px;letter-spacing:.08em;margin-left:10px}
 
 /* ---------- comments ---------- */
 .comment{background:var(--panel);border:1px solid var(--line2);border-radius:10px;padding:10px 14px;
@@ -558,6 +691,7 @@ select,.btn{background:var(--panel);border:1px solid var(--line2);color:var(--fg
       </section>
       <section class="view" id="view-deps"><div class="pad depcols" id="depsBody"></div></section>
       <section class="view" id="view-fail"><div class="pad"><div class="cardgrid" id="failBody"></div></div></section>
+      <section class="view" id="view-reco"><div class="pad" id="recoBody"></div></section>
       <section class="view" id="view-sim">
         <div id="simctl">
           <button class="rbtn" id="playBtn" title="Play">▶</button>
@@ -593,6 +727,7 @@ select,.btn{background:var(--panel);border:1px solid var(--line2);color:var(--fg
 <div id="toast"></div>
 <script>
 const DATA = __DATA__;
+const LIVE = __LIVE__, MODELVER = __MODELVER__;
 const byName = Object.fromEntries(DATA.components.map(c=>[c.name,c]));
 const LS = 'arcade-viz:'+DATA.repo;
 const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -732,6 +867,8 @@ const VIEWS=[
   {id:'deps', ic:'⑂', label:'Dependencies', title:'Dependencies'},
   {id:'fail', ic:'⚠', label:'Failure Points', title:()=>`Failure Points (${DATA.failures.length})`,
    badge:()=>DATA.failures.length, badgeCls:'warn'},
+  {id:'reco', ic:'✦', label:'Recommendations', title:'Architect Recommendations',
+   badge:()=>(DATA.recommendations||[]).length||null},
   {id:'sim',  ic:'▷', label:'Simulate', title:'Dependency Flow Simulation',
    badge:()=>DATA.traces.length+customTraces.length},
   {id:'know', ic:'▤', label:'Knowledge', title:'Knowledge', badge:()=>DATA.metrics.length,badgeCls:'dim'},
@@ -758,6 +895,7 @@ function show(id){
   if(id==='sim'&&!simG.layout){simG.render(1);selectTrace(traceSel.value);}
   if(id==='arch')requestAnimationFrame(()=>archG.fit());
   if(id==='sim')requestAnimationFrame(()=>simG.fit());
+  save('view',id);
 }
 
 /* ---------- architecture view ---------- */
@@ -781,7 +919,9 @@ function openDetail(name){
     `<h3>${esc(c.name)}</h3><div class="meta">${esc(c.responsibility||'')}</div>`+
     `<div class="kv"><span class="pill">${c.num_entities} entities (${(c.share*100).toFixed(0)}%)</span>`+
     `<span class="pill">cohesion ${(+c.cohesion).toFixed(2)}</span>`+
-    `<span class="pill">fan-in ${c.fan_in}</span><span class="pill">fan-out ${c.fan_out}</span></div>`+
+    `<span class="pill">fan-in ${c.fan_in}</span><span class="pill">fan-out ${c.fan_out}</span>`+
+    (c.cluster_factor!=null?`<span class="pill">cluster factor ${(+c.cluster_factor).toFixed(2)}</span>`:'')+
+    (c.intra_connectivity!=null?`<span class="pill">intra-conn ${(+c.intra_connectivity).toFixed(2)}</span>`:'')+`</div>`+
     (fails.length?`<div class="sec"><b>Failure points</b>`+fails.map(f=>
       `<div class="fcard" style="margin-bottom:8px"><div class="fhead"><span class="fname">${esc(f.type)}</span>`+
       `<span class="sev ${f.severity}">${f.severity}</span></div>`+
@@ -981,15 +1121,77 @@ const METRIC_HELP={
   BasicMQ:v=>'Basic modularization quality (intra vs inter-connectivity trade-off).',
   IntraConnectivity:v=>'Average edge density inside components (higher is more cohesive).',
   InterConnectivity:v=>'Average edge density between component pairs (lower is better separation).',
+  TwoWayPairRatio:v=>v<=.1?'Almost no bidirectional dependencies — clean layering.'
+      :v<=.3?'Some component pairs depend on each other both ways — layering is partly blurred.'
+      :'Many bidirectional dependencies: the layering is largely circular.',
+  BalancedArchitectureScore:v=>'Overall health score blending cohesion, principle alignment and smell discipline.',
+  PrincipleAlignmentScore:v=>'Weighted alignment with design principles (acyclic deps, layering, balance…).',
+  DependencyHealth:v=>'Low external coupling and few two-way dependencies score high.',
+  ComponentBalance:v=>'How evenly entities are distributed across components (1 = perfectly even).',
+  HubBalance:v=>'Penalizes a single component dominating fan-in or fan-out.',
+  BoundaryClarity:v=>'Components acting as both heavy producers and consumers lower this.',
+  DependencyDistribution:v=>'How evenly dependency load is spread across components.',
+  SmellDiscipline:v=>'1 minus the severity-weighted share of components touched by smells.',
 };
+function fmtDetails(m){
+  const d=m.details||{};
+  if(m.name==='RCI'&&d.total_edges!=null)return d.intra_edges+' intra / '+d.inter_edges+' inter of '+d.total_edges+' edges';
+  if(m.name==='TurboMQ'&&d.normalized!=null)return 'normalized '+(+d.normalized).toFixed(3)+' over '+d.num_components+' components';
+  if(m.name==='InterConnectivity'&&d.num_connected_pairs!=null)return d.num_connected_pairs+' connected component pairs';
+  if(m.name==='TwoWayPairRatio'&&d.total_pairs!=null)return d.bidirectional_pairs+' of '+d.total_pairs+' pairs are bidirectional';
+  return '';
+}
 function metricHelp(name,v){
   for(const k in METRIC_HELP)if(name.toLowerCase()===k.toLowerCase())return METRIC_HELP[k](v);
   return 'Architecture quality signal computed by arcade-agent.';
 }
+const ksec=t=>`<h3 style="font-size:11px;text-transform:uppercase;color:var(--muted)">${t}</h3>`;
+const sigColor=v=>v>=.75?'var(--green)':v>=.5?'var(--blue)':v>=.3?'var(--amber)':'var(--red)';
 function renderKnow(){
-  const cards=DATA.metrics.map(m=>
-    `<div class="kcard"><div class="kname">${esc(m.name)}</div><div class="kval">${(+m.value).toFixed(3)}</div>`+
-    `<p>${esc(metricHelp(m.name,+m.value))}</p></div>`).join('');
+  const cards=DATA.metrics.map(m=>{
+    const extra=fmtDetails(m);
+    return `<div class="kcard"><div class="kname">${esc(m.name)}</div><div class="kval">${(+m.value).toFixed(3)}</div>`+
+      `<p>${esc(metricHelp(m.name,+m.value))}</p>`+(extra?`<p class="kmeta">${esc(extra)}</p>`:'')+'</div>';}).join('');
+
+  // Balanced / principle-aligned scores (arcade-agent's derived metrics).
+  const scores=DATA.scores||[], signals=DATA.signals||{}, drivers=DATA.drivers||{};
+  const headline=scores.filter(s=>/BalancedArchitectureScore|PrincipleAlignmentScore/.test(s.name));
+  const rest=scores.filter(s=>!headline.includes(s));
+  const scoreCard=s=>
+    `<div class="kcard"><div class="kname">${esc(s.name.replace(/([a-z])([A-Z])/g,'$1 $2'))}</div>`+
+    `<div class="kval" style="color:${sigColor(+s.value)}">${(+s.value).toFixed(2)}</div>`+
+    `<p>${esc(metricHelp(s.name,+s.value))}</p>`+
+    (s.formula?`<p class="kmeta">${esc(s.formula)}</p>`:'')+'</div>';
+  const scoreHtml=scores.length?
+    ksec('Balanced scores (0–1, higher is better)')+
+    `<div class="kgrid">${headline.map(scoreCard).join('')+rest.map(scoreCard).join('')}</div>`:'';
+  const sigHtml=Object.keys(signals).length?
+    ksec('Principle signals')+`<div class="panelbox" style="margin-bottom:18px">`+
+    Object.entries(signals).map(([n,v])=>
+      `<div class="sigrow"><span class="sn">${esc(n.replace(/([a-z])([A-Z])/g,'$1 $2'))}</span>`+
+      `<span class="sbar"><i style="width:${Math.round(v*100)}%;background:${sigColor(+v)}"></i></span>`+
+      `<span class="sv">${(+v).toFixed(2)}</span></div>`).join('')+'</div>':'';
+  const drvList=(list)=>(list||[]).map(d=>
+    `<div class="deprow"><span>${esc(String(d.name).replace(/([a-z])([A-Z])/g,'$1 $2'))}</span>`+
+    `<span class="w" style="color:${sigColor(+d.value)}">${(+d.value).toFixed(2)}</span></div>`).join('');
+  const drvHtml=(drivers.strengths||drivers.risks)?
+    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">`+
+    `<div><h3 style="font-size:11px;text-transform:uppercase;color:var(--green)">Strengths</h3><div class="panelbox">${drvList(drivers.strengths)||'<div class="empty">—</div>'}</div></div>`+
+    `<div><h3 style="font-size:11px;text-transform:uppercase;color:var(--red)">Risks</h3><div class="panelbox">${drvList(drivers.risks)||'<div class="empty">—</div>'}</div></div></div>`:'';
+
+  // Per-component quality (cluster factor + intra-connectivity), weakest first.
+  const compQ=DATA.components.filter(c=>c.cluster_factor!=null);
+  const qHtml=compQ.length?
+    ksec('Per-component quality (weakest cluster factor first)')+
+    `<div style="overflow-x:auto;margin-bottom:18px"><table class="qtab"><tr><th style="text-align:left">Component</th>`+
+    `<th>Cluster factor</th><th>Intra-connectivity</th><th>Cohesion</th><th>Fan-in</th><th>Fan-out</th><th>Entities</th></tr>`+
+    compQ.slice().sort((a,b)=>a.cluster_factor-b.cluster_factor).map(c=>
+      `<tr><td style="text-align:left;cursor:pointer" onclick="show('arch');openDetail('${esc(c.name)}')">${esc(c.name)}</td>`+
+      `<td style="color:${sigColor(+c.cluster_factor)}">${(+c.cluster_factor).toFixed(3)}</td>`+
+      `<td>${c.intra_connectivity!=null?(+c.intra_connectivity).toFixed(3):'—'}</td>`+
+      `<td>${(+c.cohesion).toFixed(2)}</td><td>${c.fan_in}</td><td>${c.fan_out}</td><td>${c.num_entities}</td></tr>`).join('')+
+    '</table></div>':'';
+
   const glos={};DATA.failures.forEach(f=>glos[f.type]=f);
   const gcards=Object.values(glos).map(f=>
     `<div class="kcard"><div class="kname">${esc(f.type)}</div><p style="margin-top:6px">${esc(f.impact)}</p></div>`).join('');
@@ -999,11 +1201,37 @@ function renderKnow(){
     `<div class="kv"><span class="pill">repo: ${esc(DATA.repo)}</span><span class="pill">language: ${esc(DATA.language||'auto')}</span>`+
     `<span class="pill">algorithm: ${esc(DATA.algorithm)}</span><span class="pill">${DATA.num_entities} entities</span>`+
     `<span class="pill">${DATA.num_edges} edges</span><span class="pill">${DATA.components.length} components</span></div></div>`+
-    `<h3 style="font-size:11px;text-transform:uppercase;color:var(--muted)">Metrics</h3><div class="kgrid">${cards}</div>`+
-    (gcards?`<h3 style="font-size:11px;text-transform:uppercase;color:var(--muted)">Smell glossary (detected types)</h3><div class="kgrid">${gcards}</div>`:'')+
-    `<h3 style="font-size:11px;text-transform:uppercase;color:var(--muted)">Largest components</h3>`+
+    scoreHtml+sigHtml+drvHtml+
+    ksec('Core metrics')+`<div class="kgrid">${cards}</div>`+
+    qHtml+
+    (gcards?ksec('Smell glossary (detected types)')+`<div class="kgrid">${gcards}</div>`:'')+
+    ksec('Largest components')+
     `<div class="panelbox">`+largest.map(c=>
       `<div class="deprow"><span>${esc(c.name)}</span><span class="w">${c.num_entities} entities · ${(c.share*100).toFixed(0)}%</span></div>`).join('')+'</div>';
+}
+
+/* ---------- architect recommendations ---------- */
+function renderReco(){
+  const recs=DATA.recommendations||[];
+  const el=document.getElementById('recoBody');
+  if(!recs.length){el.innerHTML='<div class="empty">No recommendations — the recovered architecture looks healthy.</div>';return;}
+  const groups=[['quick win','Now — quick wins'],['planned','Next — planned work'],['big bet','Later — big bets']];
+  el.innerHTML=`<p style="margin:0 0 14px;font-size:12px;color:var(--body2);max-width:720px">A ranked improvement plan derived
+    from the detected failure points and the weakest principle signals — ordered so that high-impact,
+    low-effort work comes first.</p>`+
+  groups.map(([k,label])=>{
+    const g=recs.filter(r=>r.kind===k);
+    if(!g.length)return '';
+    return ksec(label)+'<div class="cardgrid" style="margin-bottom:18px">'+g.map(r=>
+      `<div class="fcard"><div class="fhead"><span class="rank">#${r.rank}</span><span class="fname">${esc(r.title)}</span>`+
+      `<span class="sev ${esc(r.severity)}">${esc(r.severity)}</span></div>`+
+      `<p>${esc(r.why)}</p>`+
+      `<div class="fhl" style="margin:2px 0 4px">Do this</div><p>${esc(r.action)}</p>`+
+      ((r.components||[]).length?`<div style="margin-bottom:7px">${r.components.map(c=>byName[c]
+        ?`<span class="chip" onclick="show('arch');openDetail('${esc(c)}')">${esc(c)}</span>`
+        :`<span class="chip" style="cursor:default">${esc(c)}</span>`).join('')}</div>`:'')+
+      `<div class="mit" style="color:var(--muted);font-size:11px">Improves: <em>${esc(r.improves)}</em> · Effort: ${esc(r.effort)}</div></div>`).join('')+'</div>';
+  }).join('');
 }
 
 /* ---------- comments / feedback ---------- */
@@ -1012,15 +1240,18 @@ function renderComments(){
   document.getElementById('commBody').innerHTML=(comments.length?comments.map((c,i)=>
     `<div class="comment"><span class="when">${esc(c.when)}</span><span>${esc(c.text)}</span>`+
     `<button class="del" onclick="delComment(${i})">✕</button></div>`).join('')
-    :'<div class="empty">No feedback yet. Use the bar below — notes are saved in this browser and can be copied out as a prompt for Claude.</div>');
+    :'<div class="empty">No feedback yet. Use the bar below — '+(LIVE
+      ?'notes are written to the feedback JSON on disk, where Claude picks them up.'
+      :'notes are saved in this browser and can be copied out as a prompt for Claude.')+'</div>');
   renderNav();
 }
-window.delComment=i=>{comments.splice(i,1);save('comments',comments);renderComments();};
+window.delComment=i=>{comments.splice(i,1);save('comments',comments);renderComments();syncFeedback();};
 function addFeedback(){
   const inp=document.getElementById('fbInput');
   const text=inp.value.trim();if(!text)return;
   comments.push({text,when:new Date().toLocaleString(),view:current});
-  save('comments',comments);inp.value='';renderComments();toast('Feedback added');
+  save('comments',comments);inp.value='';renderComments();syncFeedback();
+  toast(LIVE?'Feedback saved to disk for Claude':'Feedback added');
 }
 document.getElementById('fbAdd').onclick=addFeedback;
 document.getElementById('fbInput').addEventListener('keydown',e=>{if(e.key==='Enter')addFeedback();});
@@ -1047,9 +1278,27 @@ function applyTheme(){
 themeBtn.onclick=()=>{theme=theme==='light'?'dark':'light';save('theme',theme);applyTheme();};
 applyTheme();
 
+/* ---------- live mode (visualizer.py --serve) ---------- */
+function syncFeedback(){
+  if(!LIVE)return;
+  fetch('/feedback',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({repo:DATA.repo,comments})})
+    .then(()=>{},()=>toast('Could not reach the local server'));
+}
+if(LIVE){
+  const pill=document.createElement('span');
+  pill.id='livePill';pill.textContent='LIVE';pill.title='Served by visualizer.py --serve: feedback syncs to disk; the page reloads when the model JSON changes.';
+  document.getElementById('viewTitle').after(pill);
+  setInterval(()=>{fetch('/poll').then(r=>r.json()).then(j=>{
+    if(j.version&&j.version!==MODELVER){
+      toast('Model updated — reloading');setTimeout(()=>location.reload(),500);}
+  }).catch(()=>{});},1500);
+}
+
 /* ---------- boot ---------- */
-renderDeps();renderFails();renderKnow();renderComments();refreshTraceSel();
-show('arch');
+renderDeps();renderFails();renderReco();renderKnow();renderComments();refreshTraceSel();
+const bootView=load('view','arch');
+show(VIEWS.some(v=>v.id===bootView)?bootView:'arch');
 if(allTraces().length)traceSel.value=allTraces()[0].id;
 addEventListener('resize',()=>{if(current==='arch')archG.fit();if(current==='sim')simG.fit();});
 </script>
@@ -1057,11 +1306,104 @@ addEventListener('resize',()=>{if(current==='arch')archG.fit();if(current==='sim
 """
 
 
-def render_html(model: dict) -> str:
+def render_html(model: dict, *, live: bool = False, version: int = 0) -> str:
     data_json = json.dumps(model, default=str).replace("</", "<\\/")
     return (_TEMPLATE
             .replace("__REPO__", model["repo"])
+            .replace("__LIVE__", "true" if live else "false")
+            .replace("__MODELVER__", str(version))
             .replace("__DATA__", data_json))
+
+
+# ---------------------------------------------------------------------------
+# Live mode: serve the app on localhost so an agent and a browser can
+# collaborate through two plain JSON files on disk:
+#   - the model JSON: the agent edits it -> the page auto-reloads;
+#   - the feedback JSON: the page writes browser feedback -> the agent reads it.
+# ---------------------------------------------------------------------------
+
+def _serve(model_path: Path, feedback_path: Path, port: int, auto_open: bool) -> None:
+    import threading
+    import webbrowser
+    from datetime import datetime
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+    def model_version() -> int:
+        try:
+            return model_path.stat().st_mtime_ns
+        except OSError:
+            return 0
+
+    if not feedback_path.exists():
+        feedback_path.write_text(json.dumps(
+            {"updated": None, "model_file": str(model_path), "comments": []}, indent=2))
+
+    class Handler(BaseHTTPRequestHandler):
+        def _send(self, code: int, body: str, ctype: str = "application/json") -> None:
+            data = body.encode()
+            self.send_response(code)
+            self.send_header("Content-Type", ctype + "; charset=utf-8")
+            self.send_header("Content-Length", str(len(data)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):  # noqa: N802
+            path = self.path.split("?")[0]
+            if path in ("/", "/index.html"):
+                try:
+                    model = json.loads(model_path.read_text())
+                    self._send(200, render_html(model, live=True, version=model_version()),
+                               "text/html")
+                except (OSError, ValueError):
+                    # The agent is mid-write; retry from the browser side.
+                    self._send(200, "<!DOCTYPE html><meta http-equiv='refresh' content='1'>"
+                                    "<title>Reloading…</title><p style='font-family:sans-serif'>"
+                                    "Model JSON is being rewritten — retrying…</p>", "text/html")
+            elif path == "/poll":
+                self._send(200, json.dumps({"version": model_version()}))
+            elif path == "/favicon.ico":
+                self.send_response(204)
+                self.end_headers()
+            else:
+                self._send(404, json.dumps({"error": "not found"}))
+
+        def do_POST(self):  # noqa: N802
+            if self.path.split("?")[0] != "/feedback":
+                self._send(404, json.dumps({"error": "not found"}))
+                return
+            try:
+                n = int(self.headers.get("Content-Length") or 0)
+                payload = json.loads(self.rfile.read(n) or b"{}")
+                comments = payload.get("comments", [])
+                assert isinstance(comments, list)
+            except (ValueError, AssertionError):
+                self._send(400, json.dumps({"error": "bad json"}))
+                return
+            feedback_path.write_text(json.dumps({
+                "updated": datetime.now().isoformat(timespec="seconds"),
+                "model_file": str(model_path),
+                "comments": comments,
+            }, indent=2))
+            self._send(200, json.dumps({"ok": True, "saved": str(feedback_path)}))
+
+        def log_message(self, *args):  # keep the terminal readable
+            pass
+
+    srv = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    url = f"http://127.0.0.1:{port}"
+    print(f"\nLive visualizer:   {url}")
+    print(f"  model JSON    (agent edits it -> page auto-reloads): {model_path}")
+    print(f"  feedback JSON (page writes it -> agent reads it):    {feedback_path}")
+    print("Ctrl-C to stop.")
+    if auto_open:
+        threading.Timer(0.4, lambda: webbrowser.open(url)).start()
+    try:
+        srv.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        srv.server_close()
 
 
 def main() -> None:
@@ -1082,6 +1424,14 @@ def main() -> None:
     p.add_argument("--output", "-o", default=None,
                    help="Output HTML path. Default: ./arcade-report/<name>-app.html")
     p.add_argument("--no-open", action="store_true", help="Do not auto-open the report.")
+    p.add_argument("--serve", action="store_true",
+                   help="Serve the app on localhost instead of writing a static file. "
+                        "The page auto-reloads whenever the model JSON changes on disk, "
+                        "and browser feedback is written to a JSON file an agent can read.")
+    p.add_argument("--port", type=int, default=8123, help="Port for --serve (default: 8123)")
+    p.add_argument("--feedback-out", default=None, metavar="FEEDBACK_JSON",
+                   help="Feedback file path for --serve "
+                        "(default: <model>-feedback.json next to the model JSON)")
     args = p.parse_args()
 
     if args.from_model:
@@ -1095,6 +1445,29 @@ def main() -> None:
                                 algorithm=args.algorithm,
                                 num_clusters=args.num_clusters, use_llm=args.use_llm)
         model = _build_model(bundle, args.algorithm)
+
+    if args.serve:
+        if args.from_model:
+            model_path = Path(args.from_model).expanduser().resolve()
+        else:
+            model_path = (Path(args.dump_model).expanduser().resolve() if args.dump_model
+                          else Path.cwd() / "arcade-report" / f"{model['repo']}-model.json")
+            model_path.parent.mkdir(parents=True, exist_ok=True)
+            model_path.write_text(json.dumps(model, indent=2, default=str))
+        feedback_path = (Path(args.feedback_out).expanduser().resolve() if args.feedback_out
+                         else model_path.with_name(model_path.stem + "-feedback.json"))
+        emit_summary({
+            "command": "visualizer",
+            "mode": "serve",
+            "repo": model["repo"],
+            "url": f"http://127.0.0.1:{args.port}",
+            "model_json": str(model_path),
+            "feedback_json": str(feedback_path),
+            "num_components": len(model["components"]),
+            "num_failure_points": len(model["failures"]),
+        })
+        _serve(model_path, feedback_path, args.port, not args.no_open)
+        return
 
     out = (Path(args.output).expanduser().resolve() if args.output
            else Path.cwd() / "arcade-report" / f"{model['repo']}-app.html")

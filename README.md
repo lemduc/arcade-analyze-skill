@@ -58,10 +58,12 @@ A committed, dependency-free demo of the **app-style visualizer** (workflow #12)
 is at [`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html) —
 download it and open it in a browser (no arcade-agent needed). It is a
 single-page workbench with sidebar views: pan/zoom architecture diagram with
-click-to-drill details, weighted dependencies + DSM, failure-point cards,
-an animated hop-by-hop flow simulation with custom trace recording, a knowledge
-panel, and a feedback bar — plus a **dark/light mode toggle** (☀️/🌙 in the top
-bar; the choice persists across reloads). Regenerate it with:
+click-to-drill details, weighted dependencies + DSM, failure-point cards, a
+ranked **Architect Recommendations** roadmap (quick wins / planned / big bets),
+an animated hop-by-hop flow simulation with custom trace recording, a Knowledge
+view with **balanced scores, principle signals, strengths/risks and
+per-component quality**, and a feedback bar — plus a **dark/light mode toggle**
+(☀️/🌙 in the top bar; the choice persists across reloads). Regenerate it with:
 
 ```bash
 python3 scripts/visualizer.py --from-model examples/visualizer-demo-model.json \
@@ -216,12 +218,27 @@ persistent dark/light mode toggle in the top bar) with sidebar views:
   cyclic pairs in red;
 - **Failure Points** — smells presented as failure cards: severity, concrete
   impact, suggested mitigation, estimated effort;
+- **Recommendations** — a ranked, senior-architect-style improvement plan
+  (quick wins / planned work / big bets) derived from the failure points and
+  the weakest principle signals, each with the concrete components to touch,
+  the metrics it improves, and the estimated effort;
 - **Simulate** — animate a dependency flow hop-by-hop through the graph with a
   per-hop coupling waterfall; traces are auto-derived (entry flow, hub fan-out,
   cycle walk) and you can record custom ones by clicking components;
-- **Knowledge** — metrics with plain-English interpretation + smell glossary;
+- **Knowledge** — the full arcade-agent metric set with plain-English
+  interpretation: core metrics with their evidence (intra/inter edge counts,
+  bidirectional pairs…), the derived **balanced scores** and **principle
+  signals** (acyclic deps, layering health, hub balance…), strengths vs risks,
+  and a per-component quality table (cluster factor, intra-connectivity);
 - **Comments** — a feedback bar whose notes can be copied out as a
   ready-to-paste prompt for Claude.
+
+**Live mode** (`--serve`) turns the visualizer into a two-way loop with an
+agent: `visualizer.py --from-model model.json --serve` serves the app on
+localhost, writes every feedback-bar note to `<model>-feedback.json` on disk
+(where Claude can read it), and auto-reloads the page within ~2 seconds
+whenever the model JSON changes — so Claude reads your feedback, edits the
+model, and your browser view refreshes itself.
 
 A committed demo (no arcade-agent needed) lives at
 [`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html),

@@ -8,23 +8,73 @@
   "metrics": [
     {
       "name": "RCI",
-      "value": 0.581
+      "value": 0.5,
+      "details": {
+        "intra_edges": 197,
+        "inter_edges": 197,
+        "total_edges": 394
+      }
     },
     {
       "name": "TurboMQ",
-      "value": 0.474
+      "value": 5.4927,
+      "details": {
+        "cluster_factors": {
+          "cli": 0.3667,
+          "ingest": 0.4706,
+          "parsers": 0.6731,
+          "graph": 0.3622,
+          "recovery": 0.2667,
+          "clustering": 0.6306,
+          "smells": 0.6061,
+          "metrics": 0.5769,
+          "visualize": 0.5714,
+          "query": 0.6,
+          "utils": 0.3684
+        },
+        "num_components": 11,
+        "raw_sum": 5.4927,
+        "normalized": 0.4993
+      }
     },
     {
       "name": "BasicMQ",
-      "value": 0.352
+      "value": 0.4993,
+      "details": {}
     },
     {
       "name": "IntraConnectivity",
-      "value": 0.291
+      "value": 0.0713,
+      "details": {
+        "per_component": {
+          "cli": 0.0604,
+          "ingest": 0.0727,
+          "parsers": 0.0353,
+          "graph": 0.0673,
+          "recovery": 0.05,
+          "clustering": 0.0499,
+          "smells": 0.0654,
+          "metrics": 0.1136,
+          "visualize": 0.0762,
+          "query": 0.0962,
+          "utils": 0.0972
+        }
+      }
     },
     {
       "name": "InterConnectivity",
-      "value": 0.118
+      "value": 0.118,
+      "details": {
+        "num_connected_pairs": 26
+      }
+    },
+    {
+      "name": "TwoWayPairRatio",
+      "value": 0.0385,
+      "details": {
+        "bidirectional_pairs": 1,
+        "total_pairs": 26
+      }
     }
   ],
   "components": [
@@ -90,7 +140,9 @@
       "entities_total": 14,
       "failure_ids": [
         2
-      ]
+      ],
+      "cluster_factor": 0.3667,
+      "intra_connectivity": 0.0604
     },
     {
       "name": "ingest",
@@ -151,7 +203,9 @@
       "entities_total": 11,
       "failure_ids": [
         3
-      ]
+      ],
+      "cluster_factor": 0.4706,
+      "intra_connectivity": 0.0727
     },
     {
       "name": "parsers",
@@ -217,7 +271,9 @@
       "entities_total": 32,
       "failure_ids": [
         3
-      ]
+      ],
+      "cluster_factor": 0.6731,
+      "intra_connectivity": 0.0353
     },
     {
       "name": "graph",
@@ -286,7 +342,9 @@
       "entities_total": 19,
       "failure_ids": [
         1
-      ]
+      ],
+      "cluster_factor": 0.3622,
+      "intra_connectivity": 0.0673
     },
     {
       "name": "recovery",
@@ -353,7 +411,9 @@
       "entities_total": 16,
       "failure_ids": [
         0
-      ]
+      ],
+      "cluster_factor": 0.2667,
+      "intra_connectivity": 0.05
     },
     {
       "name": "clustering",
@@ -420,7 +480,9 @@
       "entities_total": 27,
       "failure_ids": [
         0
-      ]
+      ],
+      "cluster_factor": 0.6306,
+      "intra_connectivity": 0.0499
     },
     {
       "name": "smells",
@@ -480,7 +542,9 @@
         }
       ],
       "entities_total": 18,
-      "failure_ids": []
+      "failure_ids": [],
+      "cluster_factor": 0.6061,
+      "intra_connectivity": 0.0654
     },
     {
       "name": "metrics",
@@ -540,7 +604,9 @@
         }
       ],
       "entities_total": 12,
-      "failure_ids": []
+      "failure_ids": [],
+      "cluster_factor": 0.5769,
+      "intra_connectivity": 0.1136
     },
     {
       "name": "visualize",
@@ -600,7 +666,9 @@
         }
       ],
       "entities_total": 15,
-      "failure_ids": []
+      "failure_ids": [],
+      "cluster_factor": 0.5714,
+      "intra_connectivity": 0.0762
     },
     {
       "name": "query",
@@ -660,7 +728,9 @@
         }
       ],
       "entities_total": 13,
-      "failure_ids": []
+      "failure_ids": [],
+      "cluster_factor": 0.6,
+      "intra_connectivity": 0.0962
     },
     {
       "name": "utils",
@@ -723,7 +793,9 @@
       "failure_ids": [
         3,
         4
-      ]
+      ],
+      "cluster_factor": 0.3684,
+      "intra_connectivity": 0.0972
     }
   ],
   "edges": [
@@ -988,6 +1060,175 @@
         "recovery",
         "clustering"
       ]
+    }
+  ],
+  "scores": [
+    {
+      "name": "DependencyHealth",
+      "value": 0.9178,
+      "formula": "0.55*(1-InterConnectivity) + 0.45*(1-TwoWayPairRatio)"
+    },
+    {
+      "name": "ComponentBalance",
+      "value": 0.7928,
+      "formula": "1 - gini(component_sizes)"
+    },
+    {
+      "name": "HubBalance",
+      "value": 0.7944,
+      "formula": "1 - max(max(fan_in_ratio), max(fan_out_ratio))"
+    },
+    {
+      "name": "BoundaryClarity",
+      "value": 0.9806,
+      "formula": "1 - avg(min(fan_in_ratio, fan_out_ratio))"
+    },
+    {
+      "name": "DependencyDistribution",
+      "value": 0.7259,
+      "formula": "1 - gini(component_fan_loads)"
+    },
+    {
+      "name": "SmellDiscipline",
+      "value": 0.5909,
+      "formula": "1 - weighted_smell_burden"
+    },
+    {
+      "name": "PrincipleAlignmentScore",
+      "value": 0.8558,
+      "formula": "weighted average of principle-oriented normalized signals"
+    },
+    {
+      "name": "BalancedArchitectureScore",
+      "value": 0.638,
+      "formula": "0.50*cohesion_family + 0.35*PrincipleAlignmentScore + 0.15*SmellDiscipline"
+    }
+  ],
+  "signals": {
+    "AcyclicDependencies": 0.8636,
+    "LayeringHealth": 0.9042,
+    "ResponsibilityFocus": 0.8182,
+    "InterfaceSegregation": 0.9091,
+    "ComponentBalance": 0.7928,
+    "HubBalance": 0.7944,
+    "BoundaryClarity": 0.9806,
+    "DependencyDistribution": 0.7259,
+    "SmellDiscipline": 0.5909
+  },
+  "drivers": {
+    "risks": [
+      {
+        "name": "SmellDiscipline",
+        "value": 0.5909,
+        "gap_to_ideal": 0.4091
+      },
+      {
+        "name": "DependencyDistribution",
+        "value": 0.7259,
+        "gap_to_ideal": 0.2741
+      },
+      {
+        "name": "ComponentBalance",
+        "value": 0.7928,
+        "gap_to_ideal": 0.2072
+      }
+    ],
+    "strengths": [
+      {
+        "name": "BoundaryClarity",
+        "value": 0.9806,
+        "gap_to_ideal": 0.0194
+      },
+      {
+        "name": "InterfaceSegregation",
+        "value": 0.9091,
+        "gap_to_ideal": 0.0909
+      },
+      {
+        "name": "LayeringHealth",
+        "value": 0.9042,
+        "gap_to_ideal": 0.0958
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "title": "Circular dependency in recovery",
+      "why": "recovery and clustering call into each other (recover() drives the algorithms, but the algorithms call back for component naming).",
+      "action": "Break the cycle: extract the shared part into its own component, or invert one direction with an interface owned by the callee (dependency inversion).",
+      "components": [
+        "recovery",
+        "clustering"
+      ],
+      "severity": "high",
+      "effort": "medium \u2014 plan across a few PRs",
+      "improves": "RCI \u00b7 LayeringHealth \u00b7 AcyclicDependencies",
+      "score": 4,
+      "kind": "planned",
+      "source": "Dependency Cycle",
+      "rank": 1
+    },
+    {
+      "title": "Link overload (too many connections) in graph",
+      "why": "graph is depended on by 8 of 11 components (73% fan-in); nearly every change elsewhere can be affected by its API.",
+      "action": "Reduce fan-in/fan-out: introduce a facade, narrow the API surface, and cut dependencies that only need a small slice of it.",
+      "components": [
+        "graph"
+      ],
+      "severity": "high",
+      "effort": "medium \u2014 plan across a few PRs",
+      "improves": "InterfaceSegregation \u00b7 DependencyHealth",
+      "score": 4,
+      "kind": "planned",
+      "source": "Link Overload",
+      "rank": 2
+    },
+    {
+      "title": "Component owns too many concerns in cli",
+      "why": "cli orchestrates ingest, recovery, smells, metrics, visualization and query \u2014 six distinct concerns in one component.",
+      "action": "Split by concern: group entities that change together and move each group behind its own narrow interface.",
+      "components": [
+        "cli"
+      ],
+      "severity": "medium",
+      "effort": "low \u2014 localized change",
+      "improves": "ResponsibilityFocus \u00b7 TurboMQ",
+      "score": 3,
+      "kind": "quick win",
+      "source": "Concern Overload",
+      "rank": 3
+    },
+    {
+      "title": "One concern scattered across components in ingest",
+      "why": "Path normalization and file filtering logic appears in ingest, parsers and utils rather than in one owner.",
+      "action": "Consolidate the concern into one owning component and have the others depend on it instead of re-implementing it.",
+      "components": [
+        "ingest",
+        "parsers",
+        "utils"
+      ],
+      "severity": "medium",
+      "effort": "medium \u2014 plan across a few PRs",
+      "improves": "ResponsibilityFocus \u00b7 RCI",
+      "score": 2,
+      "kind": "planned",
+      "source": "Scattered Functionality",
+      "rank": 4
+    },
+    {
+      "title": "Link overload (too many connections) in utils",
+      "why": "utils is a grab-bag dependency for 6 components; its helpers have no single concern.",
+      "action": "Reduce fan-in/fan-out: introduce a facade, narrow the API surface, and cut dependencies that only need a small slice of it.",
+      "components": [
+        "utils"
+      ],
+      "severity": "low",
+      "effort": "low \u2014 localized change",
+      "improves": "InterfaceSegregation \u00b7 DependencyHealth",
+      "score": 1,
+      "kind": "quick win",
+      "source": "Link Overload",
+      "rank": 5
     }
   ]
 }
