@@ -1,18 +1,20 @@
 """Shared helpers for the arcade-analyze skill scripts.
 
 Every entry script (analyze.py, compare_algorithms.py, diff_versions.py,
-query.py) needs the same two things up front:
+query.py) needs the same thing up front: a working `import arcade_agent`.
+Two ways to get there, in resolution order:
 
-  1. Find the arcade-agent checkout (the venv has the deps, src/ has the code).
-  2. Put <home>/src on sys.path so `import arcade_agent` works — we do this
-     ourselves rather than trusting the editable install, whose .pth can point
-     at a stale path.
+  1. A development checkout: --arcade-home flag, then $ARCADE_AGENT_HOME.
+     The script must then run with that checkout's venv interpreter
+     (`<home>/.venv/bin/python`, where tree-sitter, networkx, scipy, numpy
+     and jinja2 live); we put <home>/src on sys.path ourselves rather than
+     trusting the editable install, whose .pth can point at a stale path.
+  2. The PyPI package: `pip install arcade-agent` (Python >= 3.12). If no
+     checkout is configured and `arcade_agent` is importable in the running
+     interpreter, the scripts just use it — plain `python3` works.
 
-These run with arcade-agent's venv interpreter
-(`<ARCADE_AGENT_HOME>/.venv/bin/python`), which is where tree-sitter, networkx,
-scipy, numpy, and jinja2 live. Resolution order for the home is always:
---arcade-home flag, then $ARCADE_AGENT_HOME, then error out (no hardcoded path,
-so the public repo never leaks a personal directory).
+If neither is available, error out with guidance (no hardcoded path, so the
+public repo never leaks a personal directory).
 """
 
 from __future__ import annotations
@@ -29,15 +31,11 @@ SUMMARY_BEGIN = "===ARCADE_SUMMARY_JSON==="
 SUMMARY_END = "===END_ARCADE_SUMMARY_JSON==="
 
 
-def resolve_home(cli_home: str | None) -> Path:
-    """Resolve the arcade-agent checkout from flag, env, or error."""
+def resolve_home(cli_home: str | None) -> Path | None:
+    """Resolve the arcade-agent checkout from flag or env; None if unset."""
     candidate = cli_home or os.environ.get("ARCADE_AGENT_HOME")
     if not candidate:
-        sys.exit(
-            "[arcade-analyze] arcade-agent location is not set.\n"
-            "  Pass --arcade-home /path/to/arcade-agent, or set the\n"
-            "  ARCADE_AGENT_HOME environment variable to your arcade-agent checkout."
-        )
+        return None
     home = Path(candidate).expanduser().resolve()
     if not (home / "src" / "arcade_agent").is_dir():
         sys.exit(
@@ -47,13 +45,39 @@ def resolve_home(cli_home: str | None) -> Path:
     return home
 
 
-def bootstrap(cli_home: str | None) -> Path:
-    """Resolve the home and put <home>/src on sys.path. Returns the home path."""
+def bootstrap(cli_home: str | None) -> Path | None:
+    """Make `import arcade_agent` work.
+
+    A configured checkout (--arcade-home / $ARCADE_AGENT_HOME) wins: its src/
+    goes on sys.path and the caller is expected to be running the checkout's
+    venv interpreter. Otherwise fall back to a pip-installed arcade-agent in
+    the running interpreter. Returns the checkout path, or None in pip mode.
+    """
     home = resolve_home(cli_home)
-    src = str(home / "src")
-    if src not in sys.path:
-        sys.path.insert(0, src)
-    return home
+    if home is not None:
+        src = str(home / "src")
+        if src not in sys.path:
+            sys.path.insert(0, src)
+        return home
+
+    try:
+        import arcade_agent  # noqa: F401 - probing the installed package
+        return None
+    except ImportError:
+        hint = ""
+        if sys.version_info < (3, 12):
+            hint = (f"  Note: this interpreter is Python "
+                    f"{sys.version_info.major}.{sys.version_info.minor}; "
+                    "arcade-agent needs Python >= 3.12.\n")
+        sys.exit(
+            "[arcade-analyze] arcade-agent is not available.\n"
+            "  Easiest: pip install arcade-agent   (needs Python >= 3.12),\n"
+            "  then re-run this script with that interpreter.\n"
+            + hint +
+            "  Or use a development checkout: pass --arcade-home "
+            "/path/to/arcade-agent\n"
+            "  (or set ARCADE_AGENT_HOME) and run with its venv interpreter."
+        )
 
 
 def add_common_args(parser: argparse.ArgumentParser) -> None:

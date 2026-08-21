@@ -105,10 +105,18 @@ ARCADE_CORE_HOME=/path/to/arcade_core \
 ## Install
 
 This skill is a thin wrapper over `arcade-agent`, so you need that installed
-first: install [arcade-agent](https://github.com/lemduc/arcade-agent), create
-its virtualenv (`pip install -e ".[dev]"`), and tell the skill where it lives
-(the scripts check `--arcade-home`, then `$ARCADE_AGENT_HOME`, and error out
-with guidance if neither is set):
+first — the easy way is [from PyPI](https://pypi.org/project/arcade-agent/)
+(Python ≥ 3.12), and no environment variable is needed:
+
+```bash
+pip install arcade-agent
+```
+
+Alternatively, for development against a
+[checkout](https://github.com/lemduc/arcade-agent): create its virtualenv
+(`pip install -e ".[dev]"`) and tell the skill where it lives — the scripts
+check `--arcade-home`, then `$ARCADE_AGENT_HOME`, and a configured checkout
+wins over a pip install:
 
 ```bash
 export ARCADE_AGENT_HOME=/path/to/arcade-agent
@@ -142,8 +150,10 @@ like "analyze the architecture of `/path/to/repo`", "compare PKG vs WCA on this
 project", "what changed architecturally since v1.0?", or "explain the Clustering
 component". The skill picks the right workflow below.
 
-Each workflow is a script run with arcade-agent's venv interpreter. `<source>`
-is a local directory **or a git URL** (cloned for you).
+Each workflow is a script; run it with any interpreter where `arcade-agent`
+is pip-installed (plain `python3` after `pip install arcade-agent`), or with
+the checkout's venv interpreter as shown below. `<source>` is a local
+directory **or a git URL** (cloned for you).
 
 ### 1. Analyze — one codebase → static HTML report (the default)
 
