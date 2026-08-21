@@ -54,6 +54,8 @@ breakdown, every smell with its explanation, and all six metrics. **View it live
 
 ### App-style visualizer demo
 
+![Animated tour of the arcade visualizer: architecture diagram with drill-down, dependencies + DSM, failure points, recommendations, knowledge scores, an animated flow simulation, and the dark/light toggle](examples/arcade-visualizer-demo.gif)
+
 A committed, dependency-free demo of the **app-style visualizer** (workflow #12)
 is at [`examples/arcade-visualizer-demo.html`](examples/arcade-visualizer-demo.html) —
 download it and open it in a browser (no arcade-agent needed). It is a
