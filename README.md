@@ -105,24 +105,35 @@ ARCADE_CORE_HOME=/path/to/arcade_core \
 ## Install
 
 This skill is a thin wrapper over `arcade-agent`, so you need that installed
-first.
+first: install [arcade-agent](https://github.com/lemduc/arcade-agent), create
+its virtualenv (`pip install -e ".[dev]"`), and tell the skill where it lives
+(the scripts check `--arcade-home`, then `$ARCADE_AGENT_HOME`, and error out
+with guidance if neither is set):
 
-1. Install [arcade-agent](https://github.com/lemduc/arcade-agent) and create its
-   virtualenv (`pip install -e ".[dev]"`).
-2. Make this skill discoverable by Claude Code by symlinking it into your skills
-   directory (the symlink name becomes the skill name `arcade-analyze`):
+```bash
+export ARCADE_AGENT_HOME=/path/to/arcade-agent
+```
 
-   ```bash
-   git clone https://github.com/lemduc/arcade-analyze-skill.git
-   ln -s "$(pwd)/arcade-analyze-skill" ~/.claude/skills/arcade-analyze
-   ```
+Then install the skill itself, either way:
 
-3. Tell the skill where arcade-agent lives (the scripts check `--arcade-home`,
-   then `$ARCADE_AGENT_HOME`, and error out with guidance if neither is set):
+**A. As a Claude Code plugin (recommended).** This repo is a plugin
+marketplace — inside Claude Code run:
 
-   ```bash
-   export ARCADE_AGENT_HOME=/path/to/arcade-agent
-   ```
+```
+/plugin marketplace add lemduc/arcade-analyze-skill
+/plugin install arcade-analyze@arcade-tools
+```
+
+Updates ship with the repo: `/plugin marketplace update arcade-tools` pulls
+the latest version.
+
+**B. Manually, as a bare skill.** Symlink the repo into your skills directory
+(the symlink name becomes the skill name `arcade-analyze`):
+
+```bash
+git clone https://github.com/lemduc/arcade-analyze-skill.git
+ln -s "$(pwd)/arcade-analyze-skill" ~/.claude/skills/arcade-analyze
+```
 
 ## Usage
 
