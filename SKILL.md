@@ -47,28 +47,36 @@ don't need architecture recovery.
 
 ## How to run the scripts
 
-Every script **must** run with arcade-agent's virtualenv interpreter, because the
-pipeline depends on packages installed only in that venv (tree-sitter, networkx,
-scipy, numpy, jinja2). The general form:
+The scripts need `import arcade_agent` to work. Two ways to get there — pick
+whichever the machine already has, checking in this order:
+
+**A. `$ARCADE_AGENT_HOME` is set (development checkout).** Run with that
+checkout's virtualenv interpreter, which has the pipeline deps (tree-sitter,
+networkx, scipy, numpy, jinja2):
 
 ```bash
-export ARCADE_AGENT_HOME=/Users/lemduc/personal_workspace/arcade-agent
 "$ARCADE_AGENT_HOME/.venv/bin/python" "<skill-dir>/scripts/<script>.py" <args...>
 ```
 
-**Export `ARCADE_AGENT_HOME` — that exact name.** It does double duty: the shell
-uses it to find the venv interpreter, and the script itself reads it to locate
-the checkout. Setting some other variable (or only passing the venv path) makes
-every script exit with "arcade-agent location is not set".
+The variable does double duty: the shell uses it to find the venv interpreter,
+and the script itself reads it (after `--arcade-home`) to locate the checkout,
+putting `<home>/src` on `sys.path` itself so a stale editable-install `.pth`
+can't break it. A configured checkout always wins over a pip install.
 
-`<skill-dir>` is the directory containing this SKILL.md. Each script resolves the
-arcade-agent location from `--arcade-home`, then the `$ARCADE_AGENT_HOME`
-environment variable (it errors out with guidance if neither is set) — and puts
-`<home>/src` on `sys.path` itself, so it works even though arcade-agent's
-editable-install `.pth` points at a stale path. Don't try to `import
-arcade_agent` directly or `pip install` anything; just use the venv interpreter.
-On this machine arcade-agent lives at
-`/Users/lemduc/personal_workspace/arcade-agent`.
+**B. No checkout configured — use the PyPI package.** Install once with any
+Python >= 3.12 interpreter, then run the scripts with that interpreter, no
+environment variable needed:
+
+```bash
+python3 -m pip install arcade-agent   # once; needs Python >= 3.12
+python3 "<skill-dir>/scripts/<script>.py" <args...>
+```
+
+If neither is available the scripts exit with this exact guidance; on a machine
+with plain `python3` >= 3.12, `pip install arcade-agent` is the fastest path to
+a working run.
+
+`<skill-dir>` is the directory containing this SKILL.md.
 
 Every script prints a `===ARCADE_SUMMARY_JSON===` … `===END_ARCADE_SUMMARY_JSON===`
 block to stdout. Parse that block for the structured result and relay it in chat;
